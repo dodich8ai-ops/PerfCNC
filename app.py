@@ -2,7 +2,7 @@ import os
 import json
 import re
 import pandas as pd
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, make_response
 from werkzeug.utils import secure_filename
 
 # ─────────────────────────────────────────────
@@ -271,6 +271,327 @@ def process_excel(filepath):
 
 
 # ─────────────────────────────────────────────
+#  GÉNÉRATION PDF
+# ─────────────────────────────────────────────
+def generate_pdf(data: dict) -> bytes:
+    """
+    Génère un rapport PDF A4 à partir des données du dashboard.
+    Retourne les bytes du PDF.
+    """
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.lib.units import cm
+    from reportlab.platypus import (
+        SimpleDocTemplate, Paragraph, Spacer,
+        Table, TableStyle, HRFlowable,
+    )
+    from reportlab.lib.styles import ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+    from io import BytesIO
+    import datetime
+
+    # ── Palette ──
+    NAVY     = colors.HexColor('#1F3864')
+    NAVY_LT  = colors.HexColor('#e8eef8')
+    ORANGE   = colors.HexColor('#ED7D31')
+    ORA_LT   = colors.HexColor('#fdf0e8')
+    ORA_DK   = colors.HexColor('#c96520')
+    ORA_BD   = colors.HexColor('#f8d5b3')
+    GRAY_BG  = colors.HexColor('#f4f6f9')
+    GRAY_BD  = colors.HexColor('#dde3ec')
+    TEXT     = colors.HexColor('#1a2333')
+    MUTED    = colors.HexColor('#5a6a80')
+    BLUE     = colors.HexColor('#2980b9')
+    GREEN    = colors.HexColor('#1a7a4a')
+    GRN_LT   = colors.HexColor('#e8f5ee')
+    GRN_BD   = colors.HexColor('#b3dfc7')
+    RED      = colors.HexColor('#c0392b')
+    RED_LT   = colors.HexColor('#fdf0f0')
+    RED_BD   = colors.HexColor('#f5c6c6')
+    WHITE    = colors.white
+
+    buffer = BytesIO()
+    PAGE_W, _ = A4
+    MARGIN   = 1.5 * cm
+    USABLE_W = PAGE_W - 2 * MARGIN
+    COL3     = USABLE_W / 3
+
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        leftMargin=MARGIN, rightMargin=MARGIN,
+        topMargin=MARGIN, bottomMargin=2 * cm,
+        title="Rapport PerfCNC",
+    )
+
+    # ── Styles ──
+    def ps(name, **kw):
+        defaults = dict(fontName='Helvetica', fontSize=9, textColor=TEXT, leading=13)
+        defaults.update(kw)
+        return ParagraphStyle(name, **defaults)
+
+    S_BODY     = ps('body')
+    S_MUTED    = ps('muted', fontSize=8, textColor=MUTED)
+    S_H2       = ps('h2', fontSize=12, fontName='Helvetica-Bold', textColor=NAVY,
+                    spaceBefore=10, spaceAfter=5)
+    S_TH       = ps('th', fontSize=8, fontName='Helvetica-Bold', textColor=WHITE)
+    S_TH_C     = ps('th_c', fontSize=8, fontName='Helvetica-Bold', textColor=WHITE,
+                    alignment=TA_CENTER)
+    S_NUM      = ps('num', alignment=TA_CENTER)
+    S_FOOTER   = ps('footer', fontSize=7, textColor=MUTED, alignment=TA_CENTER)
+
+    def val_style(name, color):
+        return ps(name, fontSize=20, fontName='Helvetica-Bold', textColor=color,
+                  alignment=TA_CENTER, leading=24)
+
+    def lbl_style(name):
+        return ps(name, fontSize=7, textColor=MUTED, alignment=TA_CENTER)
+
+    def sub_style(name):
+        return ps(name, fontSize=7, textColor=MUTED, alignment=TA_CENTER, leading=10)
+
+    story = []
+    now = datetime.datetime.now().strftime('%d/%m/%Y à %H:%M')
+    filename = data.get('filename', '')
+
+    # ── Helpers ──
+    def tbl_pad(extra=None):
+        base = [
+            ('TOPPADDING',    (0,0), (-1,-1), 6),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+            ('LEFTPADDING',   (0,0), (-1,-1), 7),
+            ('RIGHTPADDING',  (0,0), (-1,-1), 7),
+        ]
+        return base + (extra or [])
+
+    def zebra(n_rows, even=WHITE, odd=GRAY_BG):
+        return [('BACKGROUND', (0,i), (-1,i), even if i % 2 == 1 else odd)
+                for i in range(1, n_rows)]
+
+    # ════════════════════════════════
+    #  EN-TÊTE
+    # ════════════════════════════════
+    hdr = Table([
+        [
+            Paragraph('PerfCNC', ps('logo', fontSize=22, fontName='Helvetica-Bold',
+                                    textColor=ORANGE)),
+            Paragraph('Rapport de performance atelier',
+                      ps('hrt', fontSize=10, fontName='Helvetica-Bold', textColor=WHITE,
+                         alignment=TA_RIGHT)),
+        ],
+        [
+            Paragraph('Tableau de bord production CNC',
+                      ps('hsub', fontSize=9, textColor=colors.HexColor('#b8c8e0'))),
+            Paragraph(filename,
+                      ps('hfn', fontSize=8, textColor=colors.HexColor('#7a9ac8'),
+                         alignment=TA_RIGHT)),
+        ],
+        [
+            Paragraph(f'Analyse du {now}',
+                      ps('hdate', fontSize=8, textColor=colors.HexColor('#9ab8d8'))),
+            Paragraph('', S_BODY),
+        ],
+    ], colWidths=[USABLE_W * 0.55, USABLE_W * 0.45])
+    hdr.setStyle(TableStyle([
+        ('BACKGROUND',    (0,0), (-1,-1), NAVY),
+        ('TOPPADDING',    (0,0), (-1,-1), 10),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 7),
+        ('LEFTPADDING',   (0,0), (-1,-1), 14),
+        ('RIGHTPADDING',  (0,0), (-1,-1), 14),
+        ('VALIGN',        (0,0), (-1,-1), 'MIDDLE'),
+    ]))
+    story.append(hdr)
+    story.append(Spacer(1, 0.5 * cm))
+
+    # ════════════════════════════════
+    #  KPI CARDS
+    # ════════════════════════════════
+    story.append(Paragraph('Indicateurs clés', S_H2))
+
+    kpi_specs = [
+        (data.get('total_saisies', '—'),  'Total saisies',               NAVY_LT, RED_BD,  NAVY),
+        (data.get('moyenne_heures', '—'), 'Heures produites (moy.)',      ORA_LT,  ORA_BD,  ORANGE),
+        (data.get('total_rebuts', '—'),   'Total rebuts (Pièces KO)',     RED_LT,  RED_BD,  RED),
+    ]
+    kpi_cells = []
+    for i, (val, lbl, bg, bd, color) in enumerate(kpi_specs):
+        cell = Table(
+            [[Paragraph(str(val), val_style(f'kv{i}', color))],
+             [Paragraph(lbl,      lbl_style(f'kl{i}'))]],
+            colWidths=[COL3 - 8],
+        )
+        cell.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), bg),
+            ('BOX',        (0,0), (-1,-1), 0.5, bd),
+            ('TOPPADDING',    (0,0), (-1,-1), 10),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+        ]))
+        kpi_cells.append(cell)
+
+    kpi_tbl = Table([kpi_cells], colWidths=[COL3, COL3, COL3])
+    kpi_tbl.setStyle(TableStyle([
+        ('LEFTPADDING',  (0,0), (-1,-1), 4),
+        ('RIGHTPADDING', (0,0), (-1,-1), 4),
+        ('TOPPADDING',   (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING',(0,0), (-1,-1), 0),
+    ]))
+    story.append(kpi_tbl)
+    story.append(Spacer(1, 0.4 * cm))
+
+    # ════════════════════════════════
+    #  INDICATEURS DE PERFORMANCE
+    # ════════════════════════════════
+    indicateurs = data.get('indicateurs') or {}
+    if indicateurs:
+        story.append(Paragraph('Indicateurs de performance', S_H2))
+
+        def fmt(v):
+            return f'{v} %' if v is not None else 'N/D'
+
+        perf_specs = [
+            (fmt(indicateurs.get('trs')),          'TRS',          'Taux de Rendement Synthétique',    NAVY),
+            (fmt(indicateurs.get('disponibilite')),'Disponibilité','Heures prod. / Heures ouverture',  BLUE),
+            (fmt(indicateurs.get('taux_qualite')), 'Taux qualité', '(Total pièces − KO) / Total p.',   GREEN),
+        ]
+        perf_cells = []
+        for i, (val, lbl, sub, color) in enumerate(perf_specs):
+            cell = Table(
+                [[Paragraph(val, val_style(f'pv{i}', color))],
+                 [Paragraph(lbl, lbl_style(f'pl{i}'))],
+                 [Paragraph(sub, sub_style(f'ps{i}'))]],
+                colWidths=[COL3 - 8],
+            )
+            cell.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,-1), GRAY_BG),
+                ('BOX',        (0,0), (-1,-1), 0.4, GRAY_BD),
+                ('TOPPADDING',    (0,0), (-1,-1), 10),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+            ]))
+            perf_cells.append(cell)
+
+        perf_tbl = Table([perf_cells], colWidths=[COL3, COL3, COL3])
+        perf_tbl.setStyle(TableStyle([
+            ('LEFTPADDING',  (0,0), (-1,-1), 4),
+            ('RIGHTPADDING', (0,0), (-1,-1), 4),
+            ('TOPPADDING',   (0,0), (-1,-1), 0),
+            ('BOTTOMPADDING',(0,0), (-1,-1), 0),
+        ]))
+        story.append(perf_tbl)
+        story.append(Spacer(1, 0.4 * cm))
+
+    # ════════════════════════════════
+    #  CAUSES D'ARRÊT
+    # ════════════════════════════════
+    causes_labels = data.get('causes_labels_list', [])
+    causes_values = data.get('causes_values_list', [])
+    if causes_labels:
+        story.append(Paragraph("Causes d'arrêt", S_H2))
+        total_c = sum(causes_values) or 1
+        rows = [[Paragraph("Cause d'arrêt", S_TH),
+                 Paragraph('Occurrences', S_TH_C),
+                 Paragraph('Part (%)', S_TH_C)]]
+        for lbl, val in zip(causes_labels, causes_values):
+            rows.append([
+                Paragraph(str(lbl), S_BODY),
+                Paragraph(str(val), S_NUM),
+                Paragraph(f'{round(val / total_c * 100, 1)} %', S_NUM),
+            ])
+        ct = Table(rows, colWidths=[USABLE_W * 0.62, USABLE_W * 0.19, USABLE_W * 0.19])
+        ct.setStyle(TableStyle(
+            [('BACKGROUND', (0,0), (-1,0), NAVY),
+             ('BOX',        (0,0), (-1,-1), 0.5, GRAY_BD),
+             ('INNERGRID',  (0,1), (-1,-1), 0.3, GRAY_BD)]
+            + tbl_pad()
+            + zebra(len(rows))
+        ))
+        story.append(ct)
+        story.append(Spacer(1, 0.4 * cm))
+
+    # ════════════════════════════════
+    #  TABLEAU FAMILLES
+    # ════════════════════════════════
+    famille_rows = data.get('famille_table', [])
+    if famille_rows:
+        story.append(Paragraph('Résumé par famille', S_H2))
+        rows = [[Paragraph('Famille', S_TH),
+                 Paragraph('Saisies', S_TH_C),
+                 Paragraph('Heures prod.', S_TH_C),
+                 Paragraph('Pièces KO', S_TH_C)]]
+        for row in famille_rows:
+            rows.append([
+                Paragraph(str(row.get('Famille') or '—'), S_BODY),
+                Paragraph(str(row.get('Saisies', '')),          S_NUM),
+                Paragraph(str(row.get('Heures produites', '')), S_NUM),
+                Paragraph(str(row.get('Pièces KO', '')),        S_NUM),
+            ])
+        ft = Table(rows, colWidths=[USABLE_W*0.4, USABLE_W*0.2,
+                                    USABLE_W*0.2, USABLE_W*0.2])
+        ft.setStyle(TableStyle(
+            [('BACKGROUND', (0,0), (-1,0), NAVY),
+             ('BOX',        (0,0), (-1,-1), 0.5, GRAY_BD),
+             ('INNERGRID',  (0,1), (-1,-1), 0.3, GRAY_BD)]
+            + tbl_pad()
+            + zebra(len(rows))
+        ))
+        story.append(ft)
+        story.append(Spacer(1, 0.4 * cm))
+
+    # ════════════════════════════════
+    #  INSIGHTS IA
+    # ════════════════════════════════
+    insights = data.get('insights')
+    if isinstance(insights, dict):
+        story.append(Paragraph('Analyse IA', S_H2))
+        ia_specs = [
+            ('Problème principal', insights.get('probleme_principal', ''),
+             RED_LT, RED_BD, RED),
+            ('Tendance détectée',  insights.get('tendance', ''),
+             ORA_LT, ORA_BD, ORA_DK),
+            ('Recommandation',     insights.get('recommandation', ''),
+             GRN_LT, GRN_BD, GREEN),
+        ]
+        ia_cells = []
+        for i, (title, text, bg, bd, color) in enumerate(ia_specs):
+            cell = Table(
+                [[Paragraph(title, ps(f'it{i}', fontSize=8, fontName='Helvetica-Bold',
+                                      textColor=color))],
+                 [Paragraph(text,  ps(f'ib{i}', fontSize=8, leading=12))]],
+                colWidths=[COL3 - 8],
+            )
+            cell.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,-1), bg),
+                ('BOX',        (0,0), (-1,-1), 0.7, bd),
+                ('TOPPADDING',    (0,0), (-1,-1), 9),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 9),
+                ('LEFTPADDING',   (0,0), (-1,-1), 7),
+                ('RIGHTPADDING',  (0,0), (-1,-1), 7),
+                ('VALIGN',        (0,0), (-1,-1), 'TOP'),
+            ]))
+            ia_cells.append(cell)
+        ia_tbl = Table([ia_cells], colWidths=[COL3, COL3, COL3])
+        ia_tbl.setStyle(TableStyle([
+            ('LEFTPADDING',  (0,0), (-1,-1), 4),
+            ('RIGHTPADDING', (0,0), (-1,-1), 4),
+            ('TOPPADDING',   (0,0), (-1,-1), 0),
+            ('BOTTOMPADDING',(0,0), (-1,-1), 0),
+        ]))
+        story.append(ia_tbl)
+        story.append(Spacer(1, 0.4 * cm))
+
+    # ════════════════════════════════
+    #  PIED DE PAGE
+    # ════════════════════════════════
+    story.append(HRFlowable(width='100%', thickness=0.5, color=GRAY_BD, spaceAfter=5))
+    story.append(Paragraph(
+        f'Généré par PerfCNC — perfcnc.com &nbsp;·&nbsp; {now}',
+        S_FOOTER,
+    ))
+
+    doc.build(story)
+    return buffer.getvalue()
+
+
+# ─────────────────────────────────────────────
 #  ROUTES
 # ─────────────────────────────────────────────
 @app.route("/", methods=["GET"])
@@ -286,6 +607,34 @@ def glossaire():
 @app.route("/comment-ca-marche")
 def comment_ca_marche():
     return render_template("how_it_works.html")
+
+
+@app.route("/download-pdf", methods=["POST"])
+def download_pdf():
+    try:
+        data = {
+            "filename":          request.form.get("filename", "rapport"),
+            "total_saisies":     request.form.get("total_saisies", "—"),
+            "moyenne_heures":    request.form.get("moyenne_heures", "—"),
+            "total_rebuts":      request.form.get("total_rebuts", "—"),
+            "indicateurs":       json.loads(request.form.get("indicateurs", "{}")),
+            "causes_labels_list":json.loads(request.form.get("causes_labels", "[]")),
+            "causes_values_list":json.loads(request.form.get("causes_values", "[]")),
+            "famille_table":     json.loads(request.form.get("famille_table", "[]")),
+            "insights":          json.loads(request.form.get("insights", "null")),
+        }
+        pdf_bytes = generate_pdf(data)
+    except Exception as e:
+        flash(f"Erreur lors de la génération du PDF : {e}", "danger")
+        return redirect(url_for("index"))
+
+    safe_name = data["filename"].rsplit(".", 1)[0]
+    response = make_response(pdf_bytes)
+    response.headers["Content-Type"] = "application/pdf"
+    response.headers["Content-Disposition"] = (
+        f'attachment; filename="PerfCNC_{safe_name}.pdf"'
+    )
+    return response
 
 
 @app.route("/upload", methods=["POST"])

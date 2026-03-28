@@ -423,6 +423,46 @@
 
     #preview-table { display: none; }
 
+    /* ── PDF BUTTON ── */
+    .pdf-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--white);
+      border: 1px solid var(--gray-bd);
+      border-radius: 10px;
+      padding: .9rem 1.25rem;
+      margin-bottom: 1.75rem;
+      box-shadow: 0 1px 6px rgba(31,56,100,.06);
+    }
+
+    .pdf-bar-text {
+      font-size: .88rem;
+      color: var(--muted);
+    }
+    .pdf-bar-text strong { color: var(--navy); }
+
+    .btn-pdf {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .6rem 1.3rem;
+      background: var(--navy);
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      font-size: .9rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background .2s, transform .1s;
+      flex-shrink: 0;
+    }
+    .btn-pdf:hover {
+      background: var(--navy-md);
+      transform: translateY(-1px);
+    }
+
     /* ── FOOTER ── */
     footer {
       text-align: center;
@@ -451,6 +491,29 @@
 </nav>
 
 <main>
+
+  <!-- ── BARRE PDF ── -->
+  <div class="pdf-bar">
+    <span class="pdf-bar-text">
+      <strong>{{ filename }}</strong> — {{ total_saisies }} saisies analysées
+    </span>
+    <button class="btn-pdf" onclick="document.getElementById('pdf-form').submit()">
+      📄 Télécharger le rapport PDF
+    </button>
+  </div>
+
+  {# Formulaire caché — toutes les données pour la génération PDF #}
+  <form id="pdf-form" action="/download-pdf" method="post" style="display:none;">
+    <input type="hidden" name="filename"       value="{{ filename }}">
+    <input type="hidden" name="total_saisies"  value="{{ total_saisies }}">
+    <input type="hidden" name="moyenne_heures" value="{{ moyenne_heures }}">
+    <input type="hidden" name="total_rebuts"   value="{{ total_rebuts }}">
+    <input type="hidden" name="indicateurs"    value="{{ indicateurs | tojson | forceescape }}">
+    <input type="hidden" name="causes_labels"  value="{{ causes_labels | e }}">
+    <input type="hidden" name="causes_values"  value="{{ causes_values | e }}">
+    <input type="hidden" name="famille_table"  value="{{ famille_table | tojson | forceescape }}">
+    <input type="hidden" name="insights"       value="{{ insights | tojson | forceescape }}">
+  </form>
 
   <!-- ── KPIs ── -->
   <div class="section-label">Indicateurs clés</div>
