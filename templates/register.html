@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PerfCNC – Créer un compte</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #1F3864; --navy-md: #2c4f8c; --navy-lt: #e8eef8;
+      --orange: #ED7D31; --orange-dk: #c96520; --orange-lt: #fdf0e8;
+      --gray-bg: #f4f6f9; --gray-bd: #dde3ec;
+      --text: #1a2333; --muted: #5a6a80; --white: #ffffff;
+      --red: #c0392b; --red-lt: #fdf0f0; --green: #1a7a4a; --green-lt: #e8f5ee;
+    }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--gray-bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+    nav { background: var(--navy); height: 58px; display: flex; align-items: center; justify-content: space-between; padding: 0 1.75rem; box-shadow: 0 2px 12px rgba(0,0,0,.25); }
+    .nav-left { display: flex; align-items: center; gap: .65rem; text-decoration: none; }
+    .nav-mark { width: 34px; height: 34px; background: var(--orange); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.05rem; color: #fff; }
+    .nav-name { color: #fff; font-weight: 700; font-size: 1.05rem; }
+
+    .page { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; }
+
+    .card { background: var(--white); border-radius: 14px; border: 1px solid var(--gray-bd); box-shadow: 0 4px 24px rgba(31,56,100,.1); padding: 2.25rem 2rem; width: 100%; max-width: 440px; }
+
+    .card-header { text-align: center; margin-bottom: 1.5rem; }
+    .card-header .icon { font-size: 2.2rem; margin-bottom: .5rem; }
+    .card-header h1 { font-size: 1.35rem; font-weight: 800; color: var(--navy); }
+    .card-header p { font-size: .85rem; color: var(--muted); margin-top: .3rem; }
+
+    .plan-cards { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; margin-bottom: 1.5rem; }
+    .plan-card { border: 2px solid var(--gray-bd); border-radius: 9px; padding: .9rem; text-align: center; cursor: pointer; transition: border-color .2s, background .2s; }
+    .plan-card.selected { border-color: var(--navy); background: var(--navy-lt); }
+    .plan-card .pc-icon { font-size: 1.4rem; margin-bottom: .25rem; }
+    .plan-card .pc-name { font-weight: 700; color: var(--navy); font-size: .93rem; }
+    .plan-card .pc-desc { font-size: .75rem; color: var(--muted); margin-top: .2rem; }
+
+    .form-group { margin-bottom: 1.1rem; }
+    label { display: block; font-size: .82rem; font-weight: 600; color: var(--navy); margin-bottom: .4rem; }
+    input[type="email"], input[type="password"] {
+      width: 100%; padding: .65rem .85rem; border: 1.5px solid var(--gray-bd);
+      border-radius: 7px; font-size: .93rem; color: var(--text);
+      font-family: inherit; outline: none; transition: border-color .2s; background: var(--white);
+    }
+    input:focus { border-color: var(--navy); }
+
+    .password-hint { font-size: .76rem; color: var(--muted); margin-top: .3rem; }
+
+    .cgu-row { display: flex; align-items: flex-start; gap: .6rem; margin-bottom: 1.1rem; }
+    .cgu-row input[type="checkbox"] { width: 16px; height: 16px; margin-top: .1rem; flex-shrink: 0; accent-color: var(--navy); }
+    .cgu-row label { font-size: .83rem; color: var(--text); font-weight: 400; margin: 0; }
+    .cgu-row a { color: var(--navy); font-weight: 600; }
+
+    .btn-submit {
+      width: 100%; padding: .75rem; background: var(--orange); color: #fff;
+      border: none; border-radius: 8px; font-size: .97rem; font-weight: 700;
+      cursor: pointer; transition: background .2s; font-family: inherit;
+    }
+    .btn-submit:hover { background: var(--orange-dk); }
+
+    .flash { padding: .75rem 1rem; border-radius: 7px; font-size: .87rem; margin-bottom: 1rem; }
+    .flash.danger  { background: var(--red-lt);   border: 1px solid #f5c6c6; color: #7b1a1a; }
+    .flash.success { background: var(--green-lt); border: 1px solid #b3dfc7; color: #1a4a30; }
+
+    .divider { text-align: center; font-size: .8rem; color: var(--muted); margin: 1.1rem 0; position: relative; }
+    .divider::before, .divider::after { content: ''; position: absolute; top: 50%; width: 38%; height: 1px; background: var(--gray-bd); }
+    .divider::before { left: 0; } .divider::after { right: 0; }
+
+    .link-btn { display: block; text-align: center; padding: .65rem; border: 1.5px solid var(--gray-bd); border-radius: 8px; color: var(--navy); font-size: .9rem; font-weight: 600; text-decoration: none; transition: background .15s; }
+    .link-btn:hover { background: var(--navy-lt); border-color: var(--navy); }
+
+    footer { text-align: center; color: #9aafc4; font-size: .75rem; padding: 1rem 0; }
+  </style>
+</head>
+<body>
+<nav>
+  <a href="/" class="nav-left">
+    <div class="nav-mark">P</div>
+    <span class="nav-name">PerfCNC</span>
+  </a>
+  <a href="/login" style="color:#c8d8f0;font-size:.82rem;font-weight:500;text-decoration:none;border:1px solid rgba(255,255,255,.18);padding:.35rem .8rem;border-radius:6px;">Déjà inscrit ? Connexion</a>
+</nav>
+
+<div class="page">
+  <div class="card">
+    <div class="card-header">
+      <div class="icon">🚀</div>
+      <h1>Créer un compte</h1>
+      <p>Sauvegardez vos analyses et suivez votre TRS dans le temps</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+      <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <!-- Choix plan -->
+    <div class="plan-cards">
+      <div class="plan-card selected" id="card-free" onclick="selectPlan('free')">
+        <div class="pc-icon">🆓</div>
+        <div class="pc-name">Gratuit</div>
+        <div class="pc-desc">5 analyses · Historique · TRS cumulé</div>
+      </div>
+      <div class="plan-card" id="card-pro" onclick="selectPlan('pro')">
+        <div class="pc-icon">⭐</div>
+        <div class="pc-name">Pro</div>
+        <div class="pc-desc">Illimité · Collecte désactivée</div>
+      </div>
+    </div>
+
+    <form method="POST" action="/register" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="plan" id="plan-input" value="free">
+
+      <div class="form-group">
+        <label for="email">Adresse e-mail</label>
+        <input type="email" id="email" name="email" placeholder="vous@exemple.fr"
+               value="{{ email or '' }}" autocomplete="email" required>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <input type="password" id="password" name="password"
+               placeholder="8 caractères minimum" autocomplete="new-password" required>
+        <div class="password-hint">Au moins 8 caractères.</div>
+      </div>
+
+      <div class="form-group">
+        <label for="password2">Confirmer le mot de passe</label>
+        <input type="password" id="password2" name="password2"
+               placeholder="••••••••" autocomplete="new-password" required>
+      </div>
+
+      <div class="cgu-row">
+        <input type="checkbox" id="cgu_consent" name="cgu_consent" required>
+        <label for="cgu_consent">
+          J'ai lu et j'accepte les <a href="/cgu" target="_blank">Conditions Générales d'Utilisation</a>.
+          Plan gratuit : collecte de statistiques agrégées anonymisées.
+        </label>
+      </div>
+
+      <button type="submit" class="btn-submit">Créer mon compte →</button>
+    </form>
+
+    <div class="divider">déjà inscrit ?</div>
+    <a href="/login" class="link-btn">Se connecter</a>
+  </div>
+</div>
+
+<footer>PerfCNC &copy; 2026</footer>
+
+<script>
+  function selectPlan(plan) {
+    document.getElementById('plan-input').value = plan;
+    document.getElementById('card-free').classList.toggle('selected', plan === 'free');
+    document.getElementById('card-pro').classList.toggle('selected',  plan === 'pro');
+  }
+</script>
+</body>
+</html>

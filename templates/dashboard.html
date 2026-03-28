@@ -423,6 +423,106 @@
 
     #preview-table { display: none; }
 
+    /* ── TRS ALERT BANNER ── */
+    .trs-alert {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      border-radius: 9px;
+      padding: .8rem 1.1rem;
+      margin-bottom: 1rem;
+      font-size: .87rem;
+      font-weight: 500;
+    }
+    .trs-alert-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .trs-alert-badge {
+      margin-left: auto;
+      font-size: .82rem;
+      font-weight: 700;
+      padding: .2rem .65rem;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+    .trs-alert.rouge  { background: var(--red-lt);  border: 1px solid #f5c6c6; color: #7b1a1a; }
+    .trs-alert.orange { background: #fff8e6;         border: 1px solid #fcd34d; color: #7c4a00; }
+    .trs-alert.vert   { background: var(--green-lt); border: 1px solid #b3dfc7; color: #1a4a30; }
+    .trs-alert.rouge  .trs-alert-badge { background: #f5c6c6; color: var(--red); }
+    .trs-alert.orange .trs-alert-badge { background: #fcd34d; color: #7c4a00; }
+    .trs-alert.vert   .trs-alert-badge { background: #b3dfc7; color: var(--green); }
+
+    /* ── USER GREETING ── */
+    .user-bar {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      background: var(--white);
+      border: 1px solid var(--gray-bd);
+      border-radius: 10px;
+      padding: .7rem 1.25rem;
+      margin-bottom: 1rem;
+      font-size: .85rem;
+      box-shadow: 0 1px 6px rgba(31,56,100,.06);
+    }
+    .user-bar .u-greet { color: var(--muted); }
+    .user-bar .u-email { font-weight: 700; color: var(--navy); }
+    .plan-badge {
+      font-size: .72rem; font-weight: 700;
+      padding: .2rem .55rem; border-radius: 20px;
+    }
+    .plan-free { background: var(--navy-lt); color: var(--navy); }
+    .plan-pro  { background: #fef3c7; color: #b45309; }
+    .u-quota   { font-size: .78rem; color: var(--muted); }
+    .u-quota strong { color: var(--navy); }
+
+    /* ── TIMELINE SECTION ── */
+    .timeline-toolbar {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .tab-group { display: flex; gap: .35rem; }
+    .tab-btn {
+      padding: .38rem .9rem;
+      border: 1px solid var(--gray-bd);
+      background: var(--white);
+      border-radius: 6px;
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      transition: background .15s, color .15s, border-color .15s;
+    }
+    .tab-btn:hover  { background: var(--navy-lt); color: var(--navy); border-color: var(--navy); }
+    .tab-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+    .group-select {
+      padding: .38rem .7rem;
+      border: 1px solid var(--gray-bd);
+      border-radius: 6px;
+      font-size: .82rem;
+      color: var(--text);
+      background: var(--white);
+      cursor: pointer;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .group-select:focus { border-color: var(--navy); }
+    .trs-note {
+      font-size: .78rem;
+      color: #b45309;
+      background: #fff8e6;
+      border: 1px solid #fcd34d;
+      border-radius: 6px;
+      padding: .3rem .75rem;
+      margin-left: auto;
+    }
+    /* coloured TRS cells in table */
+    .tc-good { color: var(--green); font-weight: 700; }
+    .tc-ok   { color: #b45309;     font-weight: 700; }
+    .tc-bad  { color: var(--red);  font-weight: 700; }
+    .tc-nd   { color: #aab8cc; }
+
     /* ── SAMPLE BANNER ── */
     .sample-banner {
       display: flex;
@@ -659,6 +759,34 @@
   </div>
   {% endif %}
 
+  <!-- ── ALERTE TRS ── -->
+  {% if trs_alerte %}
+  <div class="trs-alert {{ trs_alerte.niveau }}">
+    <span class="trs-alert-icon">
+      {%- if trs_alerte.niveau == 'rouge' %}🔴{%- elif trs_alerte.niveau == 'orange' %}🟠{%- else %}🟢{%- endif %}
+    </span>
+    <span>{{ trs_alerte.message }}</span>
+    <span class="trs-alert-badge">TRS {{ trs_alerte.trs }} %</span>
+  </div>
+  {% endif %}
+
+  <!-- ── BARRE UTILISATEUR ── -->
+  {% if current_user is defined and current_user.is_authenticated %}
+  <div class="user-bar">
+    <span class="u-greet">Bonjour,</span>
+    <span class="u-email">{{ current_user.email }}</span>
+    <span class="plan-badge {% if current_user.plan == 'pro' %}plan-pro{% else %}plan-free{% endif %}">
+      {{ current_user.display_plan }}
+    </span>
+    {% if current_user.plan != 'pro' %}
+    <span class="u-quota">
+      <strong>{{ current_user.analyses_count }}/5</strong> analyses sauvegardées
+    </span>
+    {% endif %}
+    <a href="/historique" style="margin-left:auto;font-size:.82rem;color:var(--navy);font-weight:600;text-decoration:none;">📂 Historique →</a>
+  </div>
+  {% endif %}
+
   <!-- ── BARRE PDF ── -->
   <div class="pdf-bar">
     <span class="pdf-bar-text">
@@ -671,6 +799,7 @@
 
   {# Formulaire caché — toutes les données pour la génération PDF #}
   <form id="pdf-form" action="/download-pdf" method="post" style="display:none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="filename"       value="{{ filename }}">
     <input type="hidden" name="total_saisies"  value="{{ total_saisies }}">
     <input type="hidden" name="moyenne_heures" value="{{ moyenne_heures }}">
@@ -779,6 +908,73 @@
       {% endif %}
     </div>
 
+  </div>
+
+  <!-- ── ÉVOLUTION DU TRS ── -->
+  <div class="section-label">
+    Évolution du TRS
+    {% if not trs_timeline.has_cadence %}
+    <span class="trs-note">⚠ Performance non calculable — ajoutez une colonne « Cadence nominale » ou configurez <code>CADENCE_NOMINALE</code> dans app.py</span>
+    {% endif %}
+  </div>
+
+  <div class="panel" style="margin-bottom:1.75rem;">
+    <div class="timeline-toolbar">
+      <div class="tab-group">
+        <button class="tab-btn active" data-tab="mois"    onclick="switchTrsTab('mois')">Mois</button>
+        <button class="tab-btn"        data-tab="semaine" onclick="switchTrsTab('semaine')">Semaine</button>
+        <button class="tab-btn"        data-tab="jour"    onclick="switchTrsTab('jour')">Jour</button>
+      </div>
+      <select class="group-select" id="trs-group-select" onchange="switchTrsGroup(this.value)">
+        <option value="global">Atelier complet</option>
+        {% if trs_timeline.has_machine %}
+        <optgroup label="Par machine">
+          {% for m in trs_timeline.machines %}
+          <option value="machine:{{ m }}">🏭 {{ m }}</option>
+          {% endfor %}
+        </optgroup>
+        {% endif %}
+        {% if trs_timeline.familles %}
+        <optgroup label="Par famille">
+          {% for f in trs_timeline.familles %}
+          <option value="famille:{{ f }}">🏷 {{ f }}</option>
+          {% endfor %}
+        </optgroup>
+        {% endif %}
+      </select>
+    </div>
+
+    <div style="position:relative;height:280px;">
+      <canvas id="trsTimelineChart"></canvas>
+    </div>
+
+    <div class="table-scroll" style="margin-top:1.25rem;">
+      <table>
+        <thead>
+          <tr>
+            <th>Période</th>
+            <th style="text-align:center;">Postes</th>
+            <th style="text-align:center;">
+              Disponibilité
+              <button class="info-btn" style="margin-left:.3rem;" onclick="openModal('modal-col-dispo')">?</button>
+            </th>
+            <th style="text-align:center;">
+              Performance
+              <button class="info-btn" style="margin-left:.3rem;" onclick="openModal('modal-col-perf')">?</button>
+            </th>
+            <th style="text-align:center;">
+              Qualité
+              <button class="info-btn" style="margin-left:.3rem;" onclick="openModal('modal-col-qualite')">?</button>
+            </th>
+            <th style="text-align:center;">
+              TRS
+              <button class="info-btn" style="margin-left:.3rem;" onclick="openModal('modal-col-trs')">?</button>
+            </th>
+          </tr>
+        </thead>
+        <tbody id="trs-tbody"></tbody>
+      </table>
+    </div>
   </div>
 
   <!-- ── GRAPHIQUES ── -->
@@ -1109,6 +1305,71 @@
   </div>
 </div>
 
+<!-- Modales colonnes tableau TRS -->
+<div class="modal-overlay" id="modal-col-dispo" onclick="closeModal(event,'modal-col-dispo')">
+  <div class="modal-box">
+    <div class="modal-head"><h3>🔧 Disponibilité — colonne tableau</h3>
+      <button class="modal-close" onclick="document.getElementById('modal-col-dispo').classList.remove('open')">✕</button></div>
+    <div class="modal-body">
+      <div class="modal-section"><div class="modal-section-label">Formule par période</div>
+        <div class="modal-formula">Disponibilité = <span class="hl">Σ Heures produites</span> / (Nb postes × {{ indicateurs.heures_poste }} h) × 100</div></div>
+      <div class="modal-section"><div class="modal-text">Mesure le temps réel de production par rapport au temps théorique d'ouverture. Un arrêt machine, une attente matière ou un changement d'outil réduisent cette valeur.</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-col-perf" onclick="closeModal(event,'modal-col-perf')">
+  <div class="modal-box">
+    <div class="modal-head"><h3>⚡ Performance — colonne tableau</h3>
+      <button class="modal-close" onclick="document.getElementById('modal-col-perf').classList.remove('open')">✕</button></div>
+    <div class="modal-body">
+      <div class="modal-section"><div class="modal-section-label">Formule par période</div>
+        <div class="modal-formula">Performance = <span class="hl">Pièces produites</span> / (Heures prod. × Cadence nominale) × 100</div></div>
+      <div class="modal-section"><div class="modal-text">
+        {% if trs_timeline.has_cadence %}Calculée avec <strong>CADENCE_NOMINALE = {{ trs_timeline.has_cadence }}</strong> pièces/heure. Mesure si la machine tourne à pleine vitesse.
+        {% else %}Affiche « — » car <code>CADENCE_NOMINALE</code> n'est pas configuré dans app.py et la colonne « Total pièces » est absente ou <code>CADENCE_NOMINALE = None</code>.{% endif %}
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-col-qualite" onclick="closeModal(event,'modal-col-qualite')">
+  <div class="modal-box">
+    <div class="modal-head"><h3>✅ Qualité — colonne tableau</h3>
+      <button class="modal-close" onclick="document.getElementById('modal-col-qualite').classList.remove('open')">✕</button></div>
+    <div class="modal-body">
+      <div class="modal-section"><div class="modal-section-label">Formule par période</div>
+        <div class="modal-formula">Qualité = (<span class="hl">Total pièces − Pièces KO</span>) / Total pièces × 100</div></div>
+      <div class="modal-section"><div class="modal-text">
+        {% if trs_timeline.has_total_pieces %}Calculée à partir de la colonne « Total pièces » de votre fichier.
+        {% else %}Affiche « — » car la colonne optionnelle <strong>« Total pièces »</strong> est absente du fichier.{% endif %}
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-col-trs" onclick="closeModal(event,'modal-col-trs')">
+  <div class="modal-box">
+    <div class="modal-head"><h3>📊 TRS par période</h3>
+      <button class="modal-close" onclick="document.getElementById('modal-col-trs').classList.remove('open')">✕</button></div>
+    <div class="modal-body">
+      <div class="modal-section"><div class="modal-section-label">Formule</div>
+        <div class="modal-formula">
+          {% if trs_timeline.has_cadence and trs_timeline.has_total_pieces %}TRS = <span class="hl">Disponibilité × Performance × Qualité</span> / 10 000
+          {% elif trs_timeline.has_total_pieces %}TRS ≈ <span class="hl">Disponibilité × Qualité</span> / 100 <br><span style="color:#7a9ac8;font-size:.85rem;">(Performance non disponible)</span>
+          {% else %}TRS ≈ <span class="hl">Disponibilité</span> <br><span style="color:#7a9ac8;font-size:.85rem;">(Qualité et Performance non disponibles)</span>{% endif %}
+        </div></div>
+      <div class="modal-section"><div class="modal-section-label">Zones de référence</div>
+        <div class="modal-ref-row">
+          <span class="modal-ref-badge mref-bad">Critique &lt;60 %</span>
+          <span class="modal-ref-badge mref-ok">Acceptable 60–75 %</span>
+          <span class="modal-ref-badge mref-good">Bon 75–85 %</span>
+          <span class="modal-ref-badge mref-exc">Excellent &gt;85 %</span>
+        </div></div>
+    </div>
+  </div>
+</div>
+
 <script>
   // ── Palette industrielle ──
   const NAVY   = '#1F3864';
@@ -1197,6 +1458,117 @@
     const el = document.getElementById('preview-table');
     el.style.display = el.style.display === 'none' ? 'block' : 'none';
   }
+
+  // ══════════════════════════════════════════
+  //  ÉVOLUTION DU TRS — timeline chart + table
+  // ══════════════════════════════════════════
+  const TRS_DATA = {{ trs_timeline | tojson | safe }};
+  let _trsChart = null;
+  let _trsTab   = 'mois';
+  let _trsGroup = 'global';
+
+  // Plugin zones colorées (rouge/orange/vert) — pas de dépendance externe
+  const _trsZones = {
+    id: 'trsZones',
+    beforeDraw(chart) {
+      const { ctx, chartArea, scales: { y } } = chart;
+      if (!chartArea) return;
+      const { left, right } = chartArea;
+      ctx.save();
+      [[0,60,'rgba(192,57,43,0.07)'],[60,75,'rgba(237,125,49,0.07)'],[75,100,'rgba(26,122,74,0.07)']].forEach(([from,to,color]) => {
+        ctx.fillStyle = color;
+        ctx.fillRect(left, y.getPixelForValue(to), right - left, y.getPixelForValue(from) - y.getPixelForValue(to));
+      });
+      ctx.restore();
+    }
+  };
+
+  function _getRows(group, tab) {
+    if (group === 'global') return TRS_DATA[tab] || [];
+    const sep  = group.indexOf(':');
+    const type = group.slice(0, sep);
+    const name = group.slice(sep + 1);
+    const src  = type === 'machine' ? TRS_DATA.par_machine : TRS_DATA.par_famille;
+    return (src?.[name]?.[tab]) || [];
+  }
+
+  function _renderTrs() {
+    const rows   = _getRows(_trsGroup, _trsTab);
+    const labels = rows.map(r => r.periode);
+    const trsV   = rows.map(r => r.trs);
+    const dispoV = rows.map(r => r.disponibilite);
+
+    if (_trsChart) _trsChart.destroy();
+    _trsChart = new Chart(document.getElementById('trsTimelineChart'), {
+      type: 'line',
+      plugins: [_trsZones],
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'TRS (%)',
+            data: trsV,
+            borderColor: '#1F3864',
+            backgroundColor: 'rgba(31,56,100,0.08)',
+            fill: true, tension: 0.35,
+            pointRadius: 5, pointHoverRadius: 7,
+            pointBackgroundColor: trsV.map(v =>
+              v === null ? '#ccc' : v >= 75 ? '#1a7a4a' : v >= 60 ? '#ED7D31' : '#c0392b'),
+          },
+          {
+            label: 'Disponibilité (%)',
+            data: dispoV,
+            borderColor: '#2980b9', borderDash: [5,4],
+            pointRadius: 3, fill: false, tension: 0.25,
+          },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          y: { min: 0, max: 100,
+               ticks: { callback: v => v + ' %', color: '#5a6a80', font: { size: 10 } },
+               grid: { color: '#edf0f5' } },
+          x: { ticks: { color: '#5a6a80', font: { size: 10 }, maxRotation: 35, maxTicksLimit: 18 },
+               grid: { display: false } },
+        },
+        plugins: {
+          legend: { position: 'top', labels: { font: { size: 11 }, color: '#1a2333' } },
+          tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label} : ${ctx.parsed.y !== null ? ctx.parsed.y + ' %' : '—'}` } },
+        },
+      },
+    });
+
+    // Table
+    const tbody = document.getElementById('trs-tbody');
+    tbody.innerHTML = rows.length ? rows.map(r => {
+      const cls = r.trs === null ? 'tc-nd' : r.trs >= 75 ? 'tc-good' : r.trs >= 60 ? 'tc-ok' : 'tc-bad';
+      const fmt = v => v !== null ? v + ' %' : '<span class="tc-nd">—</span>';
+      return `<tr>
+        <td><strong>${r.periode}</strong></td>
+        <td class="num">${r.nb_postes}</td>
+        <td class="num">${fmt(r.disponibilite)}</td>
+        <td class="num">${r.performance !== null ? r.performance + ' %' : '<span class="tc-nd">—</span>'}</td>
+        <td class="num">${fmt(r.qualite)}</td>
+        <td class="num ${cls}">${r.trs !== null ? r.trs + ' %' : '—'}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="6" style="text-align:center;color:#9aafc4;padding:1rem;">Aucune date valide dans les données</td></tr>';
+  }
+
+  function switchTrsTab(tab) {
+    _trsTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.tab === tab));
+    _renderTrs();
+  }
+
+  function switchTrsGroup(val) {
+    _trsGroup = val;
+    _renderTrs();
+  }
+
+  _renderTrs();
 
   // ── Modals ──
   function openModal(id) {

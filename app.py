@@ -4,8 +4,13 @@ import re
 import hashlib
 import datetime
 import pandas as pd
-from flask import Flask, render_template, request, redirect, url_for, flash, make_response, session
+from flask import (Flask, render_template, request, redirect, url_for,
+                   flash, make_response, session, abort)
 from werkzeug.utils import secure_filename
+from flask_login import (LoginManager, login_required,
+                         login_user, logout_user, current_user)
+from flask_wtf.csrf import CSRFProtect
+from database import db, User, Analysis, Consent, MAX_FREE_ANALYSES, CGU_VERSION
 
 # ─────────────────────────────────────────────
 #  BASE DE CONNAISSANCES TRS
@@ -28,12 +33,13 @@ except Exception:
 USE_CLAUDE_API = False
 
 # ─────────────────────────────────────────────
-#  PARAMÈTRE CONFIGURABLE
-#  Durée théorique d'un poste en heures.
-#  Sert au calcul du TRS, de la Disponibilité
-#  et des Heures d'ouverture théoriques.
+#  PARAMÈTRES CONFIGURABLES
+#  HEURES_POSTE    : durée théorique d'un poste (calcul Disponibilité)
+#  CADENCE_NOMINALE: pièces/heure à pleine vitesse (calcul Performance)
+#                    → None si non connue : Performance affichée "—"
 # ─────────────────────────────────────────────
-HEURES_POSTE = 8
+HEURES_POSTE     = 8
+CADENCE_NOMINALE = None  # ex. : 120  pour 120 pièces/heure
 
 # ─────────────────────────────────────────────
 #  OPTIMISATION COÛT IA
@@ -54,6 +60,27 @@ DATA_COLLECT_DIR = os.path.join(os.path.dirname(__file__), "data", "collected")
 app = Flask(__name__)
 # En production, définir SECRET_KEY dans les variables d'environnement.
 app.secret_key = os.environ.get("SECRET_KEY", "perfcnc_dev_secret_change_in_prod")
+
+# ── Base de données SQLite ──
+_DB_PATH = os.path.join(os.path.dirname(__file__), "instance", "perfcnc.db")
+os.makedirs(os.path.dirname(_DB_PATH), exist_ok=True)
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+    "DATABASE_URL", f"sqlite:///{_DB_PATH}")
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db.init_app(app)
+
+# ── Flask-Login ──
+login_manager = LoginManager(app)
+login_manager.login_view  = "login"
+login_manager.login_message = "Connectez-vous pour accéder à cette page."
+login_manager.login_message_category = "danger"
+
+@login_manager.user_loader
+def _load_user(user_id):
+    return User.query.get(int(user_id))
+
+# ── CSRF ──
+csrf = CSRFProtect(app)
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "uploads")
 ALLOWED_EXTENSIONS = {"xlsx", "xls"}
@@ -232,6 +259,157 @@ def analyze_with_ollama(stats: dict) -> dict | None:
 
 
 # ─────────────────────────────────────────────
+#  ÉVOLUTION TRS — SUIVI TEMPOREL
+# ─────────────────────────────────────────────
+def compute_trs_timeline(df: "pd.DataFrame") -> dict:
+    """
+    Calcule le TRS par jour, semaine et mois sur le DataFrame complet
+    (avant échantillonnage, pour conserver la fidélité temporelle).
+
+    Colonnes utilisées :
+      - Date, Heures produites, Pièces KO (obligatoires)
+      - Total pièces                       (optionnel → Qualité)
+      - Machine                            (optionnel → ventilation par machine)
+      - Famille                            (toujours présente → ventilation par famille)
+
+    Performance calculée uniquement si CADENCE_NOMINALE ≠ None ET
+    colonne « Total pièces » présente (pour avoir les pièces réelles).
+    """
+    wdf = df.copy()
+    # Les dates sont déjà des chaînes "%d/%m/%Y" à ce stade
+    wdf["_dt"] = pd.to_datetime(wdf["Date"], format="%d/%m/%Y", errors="coerce")
+    wdf = wdf.dropna(subset=["_dt"])
+
+    if wdf.empty:
+        return {
+            "jour": [], "semaine": [], "mois": [],
+            "par_machine": {}, "par_famille": {},
+            "has_machine": False,
+            "has_cadence": CADENCE_NOMINALE is not None,
+            "has_total_pieces": False,
+            "machines": [], "familles": [],
+        }
+
+    wdf["_jour"]    = wdf["_dt"].dt.strftime("%Y-%m-%d")
+    wdf["_semaine"] = wdf["_dt"].dt.strftime("%G-S%V")   # semaine ISO
+    wdf["_mois"]    = wdf["_dt"].dt.strftime("%Y-%m")
+
+    has_machine   = "Machine" in wdf.columns
+    has_total_p   = COLONNE_TOTAL_PIECES in wdf.columns
+    has_cadence   = CADENCE_NOMINALE is not None
+
+    def _stats(gdf):
+        n      = len(gdf)
+        h_ouv  = n * HEURES_POSTE
+        h_prod = float(gdf["Heures produites"].sum())
+        ko     = float(gdf["Pièces KO"].sum())
+
+        dispo = round(h_prod / h_ouv * 100, 1) if h_ouv > 0 else None
+
+        perf    = None
+        qualite = None
+        if has_total_p:
+            total_p = float(pd.to_numeric(
+                gdf[COLONNE_TOTAL_PIECES], errors="coerce").fillna(0).sum())
+            if total_p > 0:
+                qualite = round((total_p - ko) / total_p * 100, 1)
+                if has_cadence and h_prod > 0:
+                    pieces_theo = h_prod * CADENCE_NOMINALE
+                    perf = round(min(total_p / pieces_theo * 100, 100), 1)
+
+        if dispo is not None and perf is not None and qualite is not None:
+            trs = round(dispo * perf * qualite / 10000, 1)
+        elif dispo is not None and qualite is not None:
+            trs = round(dispo * qualite / 100, 1)
+        else:
+            trs = dispo
+
+        return {
+            "disponibilite": dispo,
+            "performance":   perf,
+            "qualite":       qualite,
+            "trs":           trs,
+            "nb_postes":     n,
+        }
+
+    def _series(src, col):
+        rows = []
+        for periode, grp in src.groupby(col, sort=True):
+            s = _stats(grp)
+            s["periode"] = str(periode)
+            rows.append(s)
+        return rows
+
+    machines = sorted(wdf["Machine"].dropna().astype(str).unique().tolist()) if has_machine else []
+    familles = sorted(wdf["Famille"].dropna().astype(str).unique().tolist())
+
+    result = {
+        "has_machine":      has_machine,
+        "has_cadence":      has_cadence,
+        "has_total_pieces": has_total_p,
+        "machines":         machines,
+        "familles":         familles,
+    }
+
+    for gran, col in [("jour", "_jour"), ("semaine", "_semaine"), ("mois", "_mois")]:
+        result[gran] = _series(wdf, col)
+
+    result["par_machine"] = {
+        str(m): {g: _series(mdf, c)
+                 for g, c in [("jour","_jour"),("semaine","_semaine"),("mois","_mois")]}
+        for m, mdf in (wdf.groupby("Machine") if has_machine else [])
+    }
+
+    result["par_famille"] = {
+        (str(f) if pd.notna(f) else "Inconnue"): {
+            g: _series(fdf, c)
+            for g, c in [("jour","_jour"),("semaine","_semaine"),("mois","_mois")]
+        }
+        for f, fdf in wdf.groupby("Famille", dropna=False)
+    }
+
+    return result
+
+
+def _compute_trs_alerte(trs_timeline: dict) -> dict | None:
+    """
+    Retourne le niveau d'alerte basé sur le TRS de la dernière période.
+    Priorité : mois → semaine → jour.
+    """
+    for gran in ("mois", "semaine", "jour"):
+        data = trs_timeline.get(gran, [])
+        if data:
+            last = data[-1]
+            trs  = last.get("trs")
+            if trs is not None:
+                if trs < 60:
+                    return {
+                        "niveau": "rouge", "trs": trs, "periode": last["periode"],
+                        "message": (
+                            f"TRS critique : {trs} % sur la dernière période "
+                            f"({last['periode']}). Analysez les causes d'arrêt en priorité."
+                        ),
+                    }
+                elif trs < 75:
+                    return {
+                        "niveau": "orange", "trs": trs, "periode": last["periode"],
+                        "message": (
+                            f"TRS acceptable : {trs} % sur la dernière période "
+                            f"({last['periode']}). Des actions ciblées peuvent améliorer ce score."
+                        ),
+                    }
+                else:
+                    return {
+                        "niveau": "vert", "trs": trs, "periode": last["periode"],
+                        "message": (
+                            f"Bonne performance : TRS {trs} % sur la dernière période "
+                            f"({last['periode']})."
+                        ),
+                    }
+    return None
+
+
+# ─────────────────────────────────────────────
 #  INDICATEURS DE PERFORMANCE
 # ─────────────────────────────────────────────
 def compute_indicators(df: "pd.DataFrame") -> dict:
@@ -329,13 +507,19 @@ def process_excel(filepath):
     if missing:
         raise ValueError(f"Colonnes manquantes : {', '.join(missing)}")
 
-    df = df[COLONNES_REQUISES].copy()
+    # Conserver les colonnes optionnelles si elles sont présentes
+    _opt = [c for c in [COLONNE_TOTAL_PIECES, "Machine"] if c in df.columns]
+    df = df[COLONNES_REQUISES + _opt].copy()
 
     df["Heures produites"] = pd.to_numeric(df["Heures produites"], errors="coerce").fillna(0)
     df["Pièces KO"] = pd.to_numeric(df["Pièces KO"], errors="coerce").fillna(0)
     df["Date"] = pd.to_datetime(df["Date"], errors="coerce").dt.strftime("%d/%m/%Y").fillna("")
 
-    # ── Échantillonnage pour fichiers volumineux ──
+    # ── Évolution TRS — calculée sur données complètes avant échantillonnage ──
+    trs_timeline = compute_trs_timeline(df)
+    trs_alerte   = _compute_trs_alerte(trs_timeline)
+
+    # ── Échantillonnage pour fichiers volumineux (IA + KPIs agrégés) ──
     original_size = len(df)
     sampled = original_size > SAMPLE_THRESHOLD
     if sampled:
@@ -408,6 +592,8 @@ def process_excel(filepath):
         "indicateurs":        indicateurs,
         "sampled":            sampled,
         "original_size":      original_size,
+        "trs_timeline":       trs_timeline,
+        "trs_alerte":         trs_alerte,
     }
 
 
@@ -830,19 +1016,214 @@ def upload():
         if os.path.exists(filepath):
             os.remove(filepath)
 
-    # ── Collecte anonymisée (version gratuite uniquement) ──
-    collect_anonymous_stats({
-        "total_saisies":  data["total_saisies"],
-        "moyenne_heures": data["moyenne_heures"],
-        "total_rebuts":   data["total_rebuts"],
-        "causes":         data["causes_dict"],
-        "familles":       data["famille_dict"],
-        "trs":            data["indicateurs"].get("trs"),
-    })
+    # ── Collecte anonymisée (version gratuite, utilisateurs non connectés ou plan free) ──
+    _is_free = not current_user.is_authenticated or current_user.plan == "free"
+    if _is_free:
+        collect_anonymous_stats({
+            "total_saisies":  data["total_saisies"],
+            "moyenne_heures": data["moyenne_heures"],
+            "total_rebuts":   data["total_rebuts"],
+            "causes":         data["causes_dict"],
+            "familles":       data["famille_dict"],
+            "trs":            data["indicateurs"].get("trs"),
+        })
+
+    # ── Sauvegarde dans l'historique (utilisateurs connectés) ──
+    if current_user.is_authenticated:
+        if current_user.can_save_analysis:
+            try:
+                save_data = {k: v for k, v in data.items() if k != "preview"}
+                analysis = Analysis(
+                    user_id    = current_user.id,
+                    filename   = filename,
+                    stats_json = json.dumps(save_data, ensure_ascii=False,
+                                            default=_json_default),
+                )
+                db.session.add(analysis)
+                db.session.commit()
+                rem = current_user.analyses_remaining
+                if rem is not None:
+                    flash(f"Analyse sauvegardée. ({current_user.analyses_count}/{MAX_FREE_ANALYSES})", "success")
+            except Exception:
+                pass  # Ne jamais crasher l'app pour la sauvegarde
+        else:
+            flash(
+                f"Limite de {MAX_FREE_ANALYSES} analyses atteinte. "
+                "Supprimez une analyse dans votre historique pour en sauvegarder une nouvelle.",
+                "danger",
+            )
 
     return render_template("dashboard.html", **data, filename=filename)
 
 
+# ─────────────────────────────────────────────
+#  AUTHENTIFICATION
+# ─────────────────────────────────────────────
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
+
+    if request.method == "POST":
+        email     = (request.form.get("email") or "").strip().lower()
+        password  = request.form.get("password") or ""
+        password2 = request.form.get("password2") or ""
+        plan      = request.form.get("plan", "free")
+        cgu_ok    = request.form.get("cgu_consent") == "on"
+
+        error = None
+        if not email or "@" not in email:
+            error = "Adresse e-mail invalide."
+        elif len(password) < 8:
+            error = "Le mot de passe doit comporter au moins 8 caractères."
+        elif password != password2:
+            error = "Les deux mots de passe ne correspondent pas."
+        elif not cgu_ok:
+            error = "Vous devez accepter les CGU pour créer un compte."
+        elif User.query.filter_by(email=email).first():
+            error = "Cette adresse e-mail est déjà utilisée."
+
+        if error:
+            flash(error, "danger")
+            return render_template("register.html", email=email)
+
+        user = User(email=email, plan=plan if plan in ("free", "pro") else "free")
+        user.set_password(password)
+        consent = Consent(version_cgu=CGU_VERSION)
+        user.consent = consent
+        db.session.add(user)
+        db.session.commit()
+
+        login_user(user)
+        session["cgu_accepted"] = True
+        flash("Compte créé avec succès. Bienvenue sur PerfCNC !", "success")
+        return redirect(url_for("index"))
+
+    return render_template("register.html")
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
+
+    if request.method == "POST":
+        email    = (request.form.get("email") or "").strip().lower()
+        password = request.form.get("password") or ""
+
+        user = User.query.filter_by(email=email).first()
+        if user and user.check_password(password):
+            login_user(user, remember=True)
+            session["cgu_accepted"] = True
+            next_page = request.args.get("next")
+            return redirect(next_page or url_for("index"))
+        else:
+            flash("E-mail ou mot de passe incorrect.", "danger")
+            return render_template("login.html", email=email)
+
+    return render_template("login.html")
+
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    flash("Vous avez été déconnecté.", "success")
+    return redirect(url_for("index"))
+
+
+# ─────────────────────────────────────────────
+#  HISTORIQUE
+# ─────────────────────────────────────────────
+def _merge_timelines(analyses):
+    """Merge les trs_timeline de plusieurs analyses par période (garde la dernière)."""
+    buckets = {"jour": {}, "semaine": {}, "mois": {}}
+    for a in analyses:
+        try:
+            timeline = a.stats.get("trs_timeline", {})
+            for gran in ("jour", "semaine", "mois"):
+                for entry in timeline.get(gran, []):
+                    p = entry.get("periode", "")
+                    existing = buckets[gran].get(p)
+                    if existing is None or entry.get("nb_postes", 0) > existing.get("nb_postes", 0):
+                        buckets[gran][p] = entry
+        except Exception:
+            continue
+    return {
+        gran: sorted(buckets[gran].values(), key=lambda x: x.get("periode", ""))
+        for gran in ("jour", "semaine", "mois")
+    }
+
+
+def _week_comparison(merged):
+    today     = datetime.date.today()
+    this_lbl  = today.strftime("%G-S%V")
+    last_lbl  = (today - datetime.timedelta(weeks=1)).strftime("%G-S%V")
+    semaines  = merged.get("semaine", [])
+    return {
+        "this_week":       next((r for r in semaines if r["periode"] == this_lbl), None),
+        "last_week":       next((r for r in semaines if r["periode"] == last_lbl), None),
+        "this_week_label": this_lbl,
+        "last_week_label": last_lbl,
+    }
+
+
+@app.route("/historique")
+@login_required
+def historique():
+    analyses        = current_user.analyses.all()
+    merged_timeline = _merge_timelines(analyses) if analyses else {}
+    week_compare    = _week_comparison(merged_timeline) if merged_timeline else {}
+    return render_template("historique.html",
+                           analyses        = analyses,
+                           merged_timeline = merged_timeline,
+                           week_compare    = week_compare)
+
+
+@app.route("/analyse/<int:analysis_id>")
+@login_required
+def view_analysis(analysis_id):
+    analysis = Analysis.query.get_or_404(analysis_id)
+    if analysis.user_id != current_user.id:
+        abort(403)
+    stats = analysis.stats
+    stats["preview"]      = []
+    stats["from_history"] = True
+    return render_template("dashboard.html", **stats, filename=analysis.filename)
+
+
+@app.route("/analyse/<int:analysis_id>/supprimer", methods=["POST"])
+@login_required
+def delete_analysis(analysis_id):
+    analysis = Analysis.query.get_or_404(analysis_id)
+    if analysis.user_id != current_user.id:
+        abort(403)
+    db.session.delete(analysis)
+    db.session.commit()
+    flash("Analyse supprimée.", "success")
+    return redirect(url_for("historique"))
+
+
+# ─────────────────────────────────────────────
+#  HELPER SÉRIALISATION JSON (numpy → Python)
+# ─────────────────────────────────────────────
+def _json_default(obj):
+    """Convertit les types numpy/pandas non sérialisables."""
+    try:
+        import numpy as np  # type: ignore
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+    except ImportError:
+        pass
+    raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+
+
 if __name__ == "__main__":
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    with app.app_context():
+        db.create_all()
     app.run(debug=True, port=5000)

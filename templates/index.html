@@ -329,6 +329,17 @@
   <a href="/comment-ca-marche" class="header-link" style="margin-left:0;">❓ Comment ça marche</a>
   <a href="/glossaire" class="header-link" style="margin-left:0;">📖 Glossaire</a>
   <a href="/cgu" class="header-link" style="margin-left:0;">⚖️ CGU</a>
+  {% if current_user.is_authenticated %}
+    <a href="/historique" class="header-link" style="margin-left:auto;">📋 Historique</a>
+    <span style="color:#b8c8e0;font-size:.82rem;margin-left:.5rem;">{{ current_user.email }}</span>
+    <form method="POST" action="/logout" style="margin-left:.5rem;display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" style="background:transparent;border:1px solid rgba(255,255,255,.2);color:#c8d8f0;font-size:.82rem;padding:.3rem .75rem;border-radius:6px;cursor:pointer;font-family:inherit;">Déconnexion</button>
+    </form>
+  {% else %}
+    <a href="/login" class="header-link" style="margin-left:auto;">Connexion</a>
+    <a href="/register" class="header-link" style="margin-left:.5rem;">Créer un compte</a>
+  {% endif %}
 </header>
 
 <div class="hero">
@@ -356,6 +367,7 @@
   <div class="card">
     <div class="card-title">Importer un fichier Excel</div>
     <form action="/upload" method="post" enctype="multipart/form-data" id="upload-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="drop-zone" id="drop-zone">
         <input type="file" name="file" id="file-input" accept=".xlsx,.xls" />
         <div class="drop-icon">📂</div>
