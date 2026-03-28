@@ -8,6 +8,19 @@ from flask import Flask, render_template, request, redirect, url_for, flash, mak
 from werkzeug.utils import secure_filename
 
 # ─────────────────────────────────────────────
+#  BASE DE CONNAISSANCES TRS
+#  Chargée une seule fois au démarrage.
+# ─────────────────────────────────────────────
+_KNOWLEDGE_PATH = os.path.join(os.path.dirname(__file__), "knowledge", "trs_knowledge.json")
+try:
+    with open(_KNOWLEDGE_PATH, encoding="utf-8") as _f:
+        TRS_KNOWLEDGE = json.load(_f)
+    _KNOWLEDGE_INDEX = {ind["id"]: ind for ind in TRS_KNOWLEDGE.get("indicateurs", [])}
+except Exception:
+    TRS_KNOWLEDGE = {"indicateurs": []}
+    _KNOWLEDGE_INDEX = {}
+
+# ─────────────────────────────────────────────
 #  SWITCH IA : passer à True + définir
 #  ANTHROPIC_API_KEY en variable d'env pour
 #  basculer sur l'API Claude (1 ligne à changer)
@@ -73,6 +86,55 @@ PROMPT_TEMPLATE = (
 )
 
 
+def _get_ia_context(stats: dict) -> str:
+    """
+    Sélectionne depuis trs_knowledge.json les définitions et leviers
+    pertinents selon les seuils des données analysées.
+    Injecte toujours les valeurs de référence TRS, plus le contexte
+    Qualité si le taux de rebuts dépasse 5 %, et Disponibilité si
+    plusieurs causes d'arrêt distinctes sont présentes.
+    """
+    lines = []
+    total_saisies = stats.get("total_saisies", 0)
+    total_rebuts  = stats.get("total_rebuts", 0)
+    causes        = stats.get("causes", {})
+
+    # Taux de rebuts élevé → contexte Taux qualité
+    if total_saisies > 0 and total_rebuts / max(total_saisies, 1) > 0.05:
+        ind = _KNOWLEDGE_INDEX.get("Qualité")
+        if ind:
+            leviers = ", ".join(ind.get("leviers_amelioration", [])[:3])
+            lines.append(
+                f"[QUALITÉ] {ind['definition_operateur']} "
+                f"Formule : {ind['formule_simple']}. "
+                f"Leviers : {leviers}."
+            )
+
+    # Plusieurs causes d'arrêt → contexte Disponibilité
+    if len(causes) >= 3:
+        ind = _KNOWLEDGE_INDEX.get("Disponibilité")
+        if ind:
+            leviers = ", ".join(ind.get("leviers_amelioration", [])[:3])
+            lines.append(
+                f"[DISPONIBILITÉ] {ind['definition_operateur']} "
+                f"Formule : {ind['formule_simple']}. "
+                f"Leviers : {leviers}."
+            )
+
+    # Toujours : valeurs de référence TRS
+    ind_trs = _KNOWLEDGE_INDEX.get("TRS")
+    if ind_trs:
+        ref = ind_trs.get("valeurs_reference", {})
+        lines.append(
+            f"[TRS RÉFÉRENCE] Mauvais : {ref.get('mauvais', '<60')} % — "
+            f"Acceptable : {ref.get('acceptable', '60-75')} % — "
+            f"Bon : {ref.get('bon', '75-85')} % — "
+            f"Excellent : {ref.get('excellent', '>85')} %."
+        )
+
+    return "\n".join(lines)
+
+
 def _build_prompt(stats: dict) -> str:
     stats_str = (
         f"total_saisies={stats['total_saisies']}, "
@@ -80,6 +142,16 @@ def _build_prompt(stats: dict) -> str:
         f"total_rebuts={stats['total_rebuts']}, "
         f"causes={stats['causes']}"
     )
+    context = _get_ia_context(stats)
+    if context:
+        return (
+            "Tu es un expert en performance d'atelier d'usinage. "
+            f"Contexte industriel de référence :\n{context}\n\n"
+            f"Voici les données du mois : {stats_str}. "
+            "En tenant compte de ce contexte, donne exactement 3 insights "
+            "en JSON uniquement, sans texte autour : "
+            '{"probleme_principal": "...", "tendance": "...", "recommandation": "..."}'
+        )
     return PROMPT_TEMPLATE.format(stats=stats_str)
 
 
@@ -273,6 +345,7 @@ def process_excel(filepath):
     total_saisies = len(df)
     moyenne_heures = round(df["Heures produites"].mean(), 2)
     total_rebuts = int(df["Pièces KO"].sum())
+    total_heures_produites = round(df["Heures produites"].sum(), 2)
 
     # ── Causes d'arrêt ──
     causes_series = (
@@ -318,9 +391,10 @@ def process_excel(filepath):
     insights = analyze_with_ollama(stats_for_ia)
 
     return {
-        "total_saisies":      total_saisies,
-        "moyenne_heures":     moyenne_heures,
-        "total_rebuts":       total_rebuts,
+        "total_saisies":         total_saisies,
+        "moyenne_heures":        moyenne_heures,
+        "total_rebuts":          total_rebuts,
+        "total_heures_produites": total_heures_produites,
         "causes_labels":      json.dumps(causes_labels),
         "causes_values":      json.dumps(causes_values),
         "causes_dict":        causes_dict,
@@ -674,7 +748,13 @@ def cgu():
 
 @app.route("/glossaire")
 def glossaire():
-    return render_template("glossaire.html")
+    return render_template("glossaire.html",
+                           indicateurs=TRS_KNOWLEDGE.get("indicateurs", []))
+
+
+@app.route("/exercices")
+def exercices():
+    return render_template("exercices.html")
 
 
 @app.route("/comment-ca-marche")

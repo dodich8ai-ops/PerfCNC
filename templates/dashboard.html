@@ -479,6 +479,142 @@
       transform: translateY(-1px);
     }
 
+    /* ── MODAL ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15,25,50,.55);
+      z-index: 500;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal-box {
+      background: var(--white);
+      border-radius: 12px;
+      box-shadow: 0 8px 40px rgba(15,25,50,.25);
+      max-width: 540px;
+      width: 100%;
+      overflow: hidden;
+      animation: modal-in .18s ease;
+    }
+
+    @keyframes modal-in {
+      from { transform: translateY(12px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+
+    .modal-head {
+      background: var(--navy);
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-head h3 {
+      color: #fff;
+      font-size: .95rem;
+      font-weight: 700;
+    }
+
+    .modal-close {
+      background: rgba(255,255,255,.15);
+      border: none;
+      color: #fff;
+      font-size: 1rem;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    .modal-close:hover { background: rgba(255,255,255,.3); }
+
+    .modal-body {
+      padding: 1.25rem 1.4rem;
+    }
+
+    .modal-section {
+      margin-bottom: 1rem;
+    }
+
+    .modal-section:last-child { margin-bottom: 0; }
+
+    .modal-section-label {
+      font-size: .65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--muted);
+      margin-bottom: .4rem;
+    }
+
+    .modal-formula {
+      background: var(--navy);
+      border-radius: 7px;
+      padding: .75rem 1rem;
+      font-family: 'Courier New', monospace;
+      font-size: .9rem;
+      color: #e8f0fb;
+      line-height: 1.6;
+    }
+
+    .modal-formula .hl { color: var(--orange); font-weight: 700; }
+
+    .modal-text {
+      font-size: .9rem;
+      color: var(--text);
+      line-height: 1.65;
+    }
+
+    .modal-text .val {
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    .modal-ref-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+      margin-top: .5rem;
+    }
+
+    .modal-ref-badge {
+      font-size: .75rem;
+      font-weight: 600;
+      padding: .22rem .6rem;
+      border-radius: 5px;
+    }
+
+    .mref-bad  { background: var(--red-lt);   color: var(--red);   border: 1px solid #f5c6c6; }
+    .mref-ok   { background: #fff8e6;          color: #b45309;      border: 1px solid #fcd34d; }
+    .mref-good { background: var(--navy-lt);   color: var(--navy);  border: 1px solid #c8d8f0; }
+    .mref-exc  { background: var(--green-lt);  color: var(--green); border: 1px solid #b3dfc7; }
+
+    /* "?" info button */
+    .info-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: var(--navy-lt);
+      color: var(--navy);
+      border: 1px solid #c8d8f0;
+      font-size: .72rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s;
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+    .info-btn:hover { background: var(--navy); color: #fff; }
+
     /* ── FOOTER ── */
     footer {
       text-align: center;
@@ -501,6 +637,7 @@
   <div class="nav-right">
     <span class="nav-file" title="{{ filename }}">📄 {{ filename }}</span>
     <a href="/comment-ca-marche" class="nav-link">❓ Comment ça marche</a>
+    <a href="/exercices" class="nav-link">🧮 Exercices</a>
     <a href="/glossaire" class="nav-link">📖 Glossaire</a>
     <a href="/cgu" class="nav-link">⚖️ CGU</a>
     <a href="/" class="btn-back">← Nouvel import</a>
@@ -554,6 +691,7 @@
         <div class="kpi-val blue">{{ total_saisies }}</div>
         <div class="kpi-lbl">Total saisies</div>
       </div>
+      <button class="info-btn" onclick="openModal('modal-saisies')" title="Comment c'est calculé ?">?</button>
     </div>
     <div class="kpi-card">
       <div class="kpi-icon orange">⏱️</div>
@@ -561,6 +699,7 @@
         <div class="kpi-val orange">{{ moyenne_heures }}</div>
         <div class="kpi-lbl">Heures produites (moy.)</div>
       </div>
+      <button class="info-btn" onclick="openModal('modal-heures')" title="Comment c'est calculé ?">?</button>
     </div>
     <div class="kpi-card">
       <div class="kpi-icon red">⚠️</div>
@@ -568,6 +707,7 @@
         <div class="kpi-val red">{{ total_rebuts }}</div>
         <div class="kpi-lbl">Total pièces KO (rebuts)</div>
       </div>
+      <button class="info-btn" onclick="openModal('modal-rebuts')" title="Comment c'est calculé ?">?</button>
     </div>
   </div>
 
@@ -580,7 +720,10 @@
 
     {# TRS #}
     <div class="perf-card trs">
-      <div class="perf-label">TRS — Taux de Rendement Synthétique</div>
+      <div style="display:flex;align-items:center;margin-bottom:.4rem;">
+        <div class="perf-label" style="margin-bottom:0;flex:1;">TRS — Taux de Rendement Synthétique</div>
+        <button class="info-btn" onclick="openModal('modal-trs')" title="Comment c'est calculé ?">?</button>
+      </div>
       {% if indicateurs.trs is not none %}
         <div class="perf-value">{{ indicateurs.trs }}<span class="perf-unit"> %</span></div>
         <div class="perf-sub">
@@ -598,11 +741,14 @@
 
     {# Disponibilité #}
     <div class="perf-card dispo">
-      <div class="perf-label">Disponibilité machine</div>
+      <div style="display:flex;align-items:center;margin-bottom:.4rem;">
+        <div class="perf-label" style="margin-bottom:0;flex:1;">Disponibilité machine</div>
+        <button class="info-btn" onclick="openModal('modal-dispo')" title="Comment c'est calculé ?">?</button>
+      </div>
       {% if indicateurs.disponibilite is not none %}
         <div class="perf-value">{{ indicateurs.disponibilite }}<span class="perf-unit"> %</span></div>
         <div class="perf-sub">
-          Heures produites / Heures ouverture théoriques
+          {{ total_heures_produites }} h produites / {{ indicateurs.heures_ouverture_theoriques }} h ouverture
         </div>
         <div class="perf-bar-track">
           <div class="perf-bar-fill" style="width:{{ [indicateurs.disponibilite, 100] | min }}%"></div>
@@ -615,7 +761,10 @@
 
     {# Taux qualité #}
     <div class="perf-card qualite">
-      <div class="perf-label">Taux qualité</div>
+      <div style="display:flex;align-items:center;margin-bottom:.4rem;">
+        <div class="perf-label" style="margin-bottom:0;flex:1;">Taux qualité</div>
+        <button class="info-btn" onclick="openModal('modal-qualite')" title="Comment c'est calculé ?">?</button>
+      </div>
       {% if indicateurs.taux_qualite is not none %}
         <div class="perf-value">{{ indicateurs.taux_qualite }}<span class="perf-unit"> %</span></div>
         <div class="perf-sub">
@@ -736,6 +885,230 @@
 
 <footer>PerfCNC &copy; 2026 — Tableau de bord performance atelier CNC</footer>
 
+<!-- ══════════════════════
+     MODALS "Comment c'est calculé ?"
+══════════════════════ -->
+
+<!-- Modal : Total saisies -->
+<div class="modal-overlay" id="modal-saisies" onclick="closeModal(event, 'modal-saisies')">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>📋 Total saisies</h3>
+      <button class="modal-close" onclick="document.getElementById('modal-saisies').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-label">Définition</div>
+        <div class="modal-text">
+          Nombre de lignes valides lues dans votre fichier Excel après nettoyage.
+          Chaque ligne représente un <span class="val">poste de production</span> ou une saisie d'opérateur.
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Valeur actuelle</div>
+        <div class="modal-formula">
+          Total saisies = <span class="hl">{{ total_saisies }} lignes</span>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Utilisation dans PerfCNC</div>
+        <div class="modal-text">
+          Ce nombre est la base du calcul du temps d'ouverture théorique :<br>
+          <strong>{{ total_saisies }} postes × {{ indicateurs.heures_poste }}h = {{ indicateurs.heures_ouverture_theoriques }}h théoriques</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : Heures produites -->
+<div class="modal-overlay" id="modal-heures" onclick="closeModal(event, 'modal-heures')">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>⏱️ Heures produites (moyenne)</h3>
+      <button class="modal-close" onclick="document.getElementById('modal-heures').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-label">Formule</div>
+        <div class="modal-formula">
+          Moyenne = <span class="hl">Σ Heures produites</span> / Nombre de saisies<br>
+          = <span class="hl">{{ total_heures_produites }} h</span> / {{ total_saisies }} = <span class="hl">{{ moyenne_heures }} h</span>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Interprétation</div>
+        <div class="modal-text">
+          Une moyenne de <span class="val">{{ moyenne_heures }} h</span> par poste, pour un poste théorique de
+          <span class="val">{{ indicateurs.heures_poste }} h</span>, correspond à une disponibilité brute de
+          <span class="val">{{ indicateurs.disponibilite }} %</span>.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : Total rebuts -->
+<div class="modal-overlay" id="modal-rebuts" onclick="closeModal(event, 'modal-rebuts')">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>⚠️ Total pièces KO (rebuts)</h3>
+      <button class="modal-close" onclick="document.getElementById('modal-rebuts').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-label">Formule</div>
+        <div class="modal-formula">
+          Total rebuts = <span class="hl">Σ (colonne "Pièces KO")</span><br>
+          = <span class="hl">{{ total_rebuts }} pièces</span>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Interprétation</div>
+        <div class="modal-text">
+          Les rebuts sont des pièces non conformes, retirées de la production.
+          {% if indicateurs.taux_qualite is not none %}
+          Le <span class="val">taux qualité de {{ indicateurs.taux_qualite }} %</span> est calculé grâce à la colonne optionnelle « Total pièces ».
+          {% else %}
+          Pour calculer le <span class="val">taux qualité</span>, ajoutez une colonne « Total pièces » dans votre fichier Excel.
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : TRS -->
+<div class="modal-overlay" id="modal-trs" onclick="closeModal(event, 'modal-trs')">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>📊 TRS — Taux de Rendement Synthétique</h3>
+      <button class="modal-close" onclick="document.getElementById('modal-trs').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-label">Formule générale</div>
+        <div class="modal-formula">
+          TRS = <span class="hl">Disponibilité × Performance × Qualité</span><br><br>
+          {% if indicateurs.taux_qualite is not none %}
+          TRS = {{ indicateurs.disponibilite }} % × <em>Perf.</em> × {{ indicateurs.taux_qualite }} %<br>
+          <span style="color:#7a9ac8;font-size:.85rem;">↳ Performance non mesurable sans cadence nominale dans le fichier</span>
+          {% else %}
+          TRS ≈ Disponibilité = <span class="hl">{{ indicateurs.trs }} %</span><br>
+          <span style="color:#7a9ac8;font-size:.85rem;">↳ Modèle simplifié : Performance et Qualité non disponibles dans ce fichier</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Valeurs de référence industrie</div>
+        <div class="modal-ref-row">
+          <span class="modal-ref-badge mref-bad">Mauvais &lt;60 %</span>
+          <span class="modal-ref-badge mref-ok">Acceptable 60–75 %</span>
+          <span class="modal-ref-badge mref-good">Bon 75–85 %</span>
+          <span class="modal-ref-badge mref-exc">Excellent &gt;85 %</span>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-text">
+          Votre TRS actuel : <span class="val">{{ indicateurs.trs }} %</span>
+          {% if indicateurs.trs is not none %}
+            {% if indicateurs.trs >= 85 %}— Excellent ! Niveau classe mondiale.
+            {% elif indicateurs.trs >= 75 %}— Bon niveau. Objectif : franchir les 85 %.
+            {% elif indicateurs.trs >= 60 %}— Zone acceptable. Des actions ciblées peuvent vite améliorer ce score.
+            {% else %}— Zone critique. Analysez les causes d'arrêt et les rebuts en priorité.
+            {% endif %}
+          {% endif %}
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-text" style="font-size:.82rem;color:var(--muted);">
+          Pour approfondir → <a href="/glossaire" style="color:var(--navy);font-weight:600;">Glossaire TRS</a> · <a href="/exercices" style="color:var(--navy);font-weight:600;">Exercices pratiques</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : Disponibilité -->
+<div class="modal-overlay" id="modal-dispo" onclick="closeModal(event, 'modal-dispo')">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>🔧 Disponibilité machine</h3>
+      <button class="modal-close" onclick="document.getElementById('modal-dispo').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-label">Formule appliquée à vos données</div>
+        <div class="modal-formula">
+          Disponibilité = <span class="hl">Heures produites</span> / <span class="hl">Heures d'ouverture</span> × 100<br><br>
+          = <span class="hl">{{ total_heures_produites }} h</span> / (<span class="hl">{{ total_saisies }} postes × {{ indicateurs.heures_poste }} h</span>) × 100<br>
+          = {{ total_heures_produites }} / {{ indicateurs.heures_ouverture_theoriques }} × 100<br>
+          = <span class="hl">{{ indicateurs.disponibilite }} %</span>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Interprétation</div>
+        <div class="modal-text">
+          Sur les <span class="val">{{ indicateurs.heures_ouverture_theoriques }} h</span> théoriquement disponibles,
+          la machine a réellement produit pendant <span class="val">{{ total_heures_produites }} h</span>.
+          Les <span class="val">{{ (indicateurs.heures_ouverture_theoriques - total_heures_produites) | round(1) }} h</span> restantes
+          correspondent aux arrêts (pannes, changements d'outils, attentes…).
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Valeurs de référence</div>
+        <div class="modal-ref-row">
+          <span class="modal-ref-badge mref-bad">Mauvais &lt;60 %</span>
+          <span class="modal-ref-badge mref-ok">Acceptable 60–75 %</span>
+          <span class="modal-ref-badge mref-good">Bon 75–85 %</span>
+          <span class="modal-ref-badge mref-exc">Excellent &gt;85 %</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : Taux qualité -->
+<div class="modal-overlay" id="modal-qualite" onclick="closeModal(event, 'modal-qualite')">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>✅ Taux qualité</h3>
+      <button class="modal-close" onclick="document.getElementById('modal-qualite').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      {% if indicateurs.taux_qualite is not none %}
+      <div class="modal-section">
+        <div class="modal-section-label">Formule appliquée à vos données</div>
+        <div class="modal-formula">
+          Taux qualité = (<span class="hl">Total pièces − Pièces KO</span>) / Total pièces × 100<br><br>
+          Pièces KO = <span class="hl">{{ total_rebuts }}</span><br>
+          Taux qualité = <span class="hl">{{ indicateurs.taux_qualite }} %</span>
+        </div>
+      </div>
+      {% else %}
+      <div class="modal-section">
+        <div class="modal-section-label">Donnée non disponible</div>
+        <div class="modal-formula">
+          Taux qualité = (<span class="hl">Total pièces − Pièces KO</span>) / Total pièces × 100
+        </div>
+        <div class="modal-text" style="margin-top:.75rem;">
+          Pour activer ce calcul, ajoutez une colonne <strong>« Total pièces »</strong> dans votre fichier Excel.
+          PerfCNC la détectera automatiquement.
+        </div>
+      </div>
+      {% endif %}
+      <div class="modal-section">
+        <div class="modal-section-label">Valeurs de référence</div>
+        <div class="modal-ref-row">
+          <span class="modal-ref-badge mref-bad">Mauvais &lt;95 %</span>
+          <span class="modal-ref-badge mref-ok">Acceptable 95–98 %</span>
+          <span class="modal-ref-badge mref-exc">Excellent &gt;98 %</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   // ── Palette industrielle ──
   const NAVY   = '#1F3864';
@@ -824,6 +1197,23 @@
     const el = document.getElementById('preview-table');
     el.style.display = el.style.display === 'none' ? 'block' : 'none';
   }
+
+  // ── Modals ──
+  function openModal(id) {
+    document.getElementById(id).classList.add('open');
+  }
+
+  function closeModal(event, id) {
+    if (event.target === event.currentTarget) {
+      document.getElementById(id).classList.remove('open');
+    }
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+    }
+  });
 </script>
 
 </body>
