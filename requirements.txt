@@ -8,6 +8,7 @@ reportlab>=4.0.0
 flask-login>=0.6.0
 flask-sqlalchemy>=3.0.0
 flask-wtf>=1.2.0
+flask-mail>=0.9.1
 # IA locale (Ollama) — désactivé en production cloud
 ollama>=0.2.0
 # IA cloud — décommentez si USE_CLAUDE_API = True

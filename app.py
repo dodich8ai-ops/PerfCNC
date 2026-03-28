@@ -82,6 +82,16 @@ def _load_user(user_id):
 # ── CSRF ──
 csrf = CSRFProtect(app)
 
+from flask_mail import Mail, Message as MailMessage
+
+app.config["MAIL_SERVER"]   = os.environ.get("MAIL_SERVER",   "smtp.gmail.com")
+app.config["MAIL_PORT"]     = int(os.environ.get("MAIL_PORT", "587"))
+app.config["MAIL_USE_TLS"]  = True
+app.config["MAIL_USERNAME"] = os.environ.get("MAIL_USERNAME", "")
+app.config["MAIL_PASSWORD"] = os.environ.get("MAIL_PASSWORD", "")
+CONTACT_EMAIL = os.environ.get("CONTACT_EMAIL", "contact@perfcnc.com")
+mail = Mail(app)
+
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "uploads")
 ALLOWED_EXTENSIONS = {"xlsx", "xls"}
 
@@ -598,6 +608,58 @@ def process_excel(filepath):
 
 
 # ─────────────────────────────────────────────
+#  DÉMO — GÉNÉRATION DU FICHIER EXCEL EXEMPLE
+# ─────────────────────────────────────────────
+_DEMO_PATH = os.path.join(os.path.dirname(__file__), "data", "demo", "demo_atelier.xlsx")
+
+
+def _generate_demo_file():
+    """Crée data/demo/demo_atelier.xlsx avec 50 lignes réalistes si non existant."""
+    import random
+    from openpyxl import Workbook  # type: ignore
+
+    os.makedirs(os.path.dirname(_DEMO_PATH), exist_ok=True)
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Données"
+
+    headers = [
+        "Date", "Équipe", "Code CRMX", "Référence pièce", "Famille",
+        "Cause arrêt", "Heures produites", "Pièces KO", "Total pièces",
+    ]
+    ws.append(headers)
+
+    equipes      = ["Matin", "Après-midi", "Nuit"]
+    codes        = ["CRM001", "CRM002", "CRM003", "CRM004", "CRM005"]
+    refs         = [f"PX-{n}" for n in range(100, 320, 10)]
+    familles     = ["Usinage", "Fraisage", "Tournage"]
+    causes       = ["Panne machine", "Réglage", "Manque matière", "Pause", "Maintenance"]
+
+    today  = datetime.date.today()
+    start  = today - datetime.timedelta(days=56)
+
+    rng = random.Random(42)  # reproductible
+    for _ in range(50):
+        offset    = rng.randint(0, 55)
+        date_row  = start + datetime.timedelta(days=offset)
+        total_p   = rng.randint(40, 120)
+        pieces_ko = rng.randint(0, min(15, total_p))
+        ws.append([
+            date_row.strftime("%d/%m/%Y"),
+            rng.choice(equipes),
+            rng.choice(codes),
+            rng.choice(refs),
+            rng.choice(familles),
+            rng.choice(causes),
+            round(rng.uniform(4, 8), 1),
+            pieces_ko,
+            total_p,
+        ])
+
+    wb.save(_DEMO_PATH)
+
+
+# ─────────────────────────────────────────────
 #  GÉNÉRATION PDF
 # ─────────────────────────────────────────────
 def generate_pdf(data: dict) -> bytes:
@@ -906,6 +968,79 @@ def generate_pdf(data: dict) -> bytes:
         story.append(Spacer(1, 0.4 * cm))
 
     # ════════════════════════════════
+    #  TRS PAR SEMAINE
+    # ════════════════════════════════
+    trs_timeline = data.get("trs_timeline", {})
+    semaines = trs_timeline.get("semaine", [])
+    if semaines:
+        story.append(Paragraph("TRS par semaine", S_H2))
+        trs_hdr = [
+            Paragraph("Semaine", S_TH_C),
+            Paragraph("Disponibilité", S_TH_C),
+            Paragraph("Performance", S_TH_C),
+            Paragraph("Qualité", S_TH_C),
+            Paragraph("TRS", S_TH_C),
+            Paragraph("Postes", S_TH_C),
+        ]
+        trs_rows = [trs_hdr]
+        for row in semaines[-12:]:  # last 12 weeks max
+            def _fmt_pct(v):
+                return f"{v:.1f}%" if v is not None else "—"
+            trs_rows.append([
+                Paragraph(str(row.get("periode", "")), S_NUM),
+                Paragraph(_fmt_pct(row.get("disponibilite")), S_NUM),
+                Paragraph(_fmt_pct(row.get("performance")), S_NUM),
+                Paragraph(_fmt_pct(row.get("taux_qualite")), S_NUM),
+                Paragraph(_fmt_pct(row.get("trs")), S_NUM),
+                Paragraph(str(row.get("nb_postes", "")), S_NUM),
+            ])
+        trs_tbl = Table(trs_rows, colWidths=[USABLE_W*0.22, USABLE_W*0.17, USABLE_W*0.17, USABLE_W*0.13, USABLE_W*0.13, USABLE_W*0.13])
+        trs_tbl.setStyle(TableStyle([
+            ('BACKGROUND',    (0,0), (-1,0),  NAVY),
+            ('TEXTCOLOR',     (0,0), (-1,0),  WHITE),
+            ('GRID',          (0,0), (-1,-1), 0.4, GRAY_BD),
+            ('ALIGN',         (0,0), (-1,-1), 'CENTER'),
+            ('VALIGN',        (0,0), (-1,-1), 'MIDDLE'),
+            *tbl_pad(),
+            *zebra(len(trs_rows)),
+        ]))
+        story.append(trs_tbl)
+        story.append(Spacer(1, 0.4 * cm))
+
+    # ════════════════════════════════
+    #  COMPARAISON SEMAINE
+    # ════════════════════════════════
+    week_compare = data.get("week_compare", {})
+    tw = week_compare.get("this_week")
+    lw = week_compare.get("last_week")
+    if tw and lw:
+        story.append(Paragraph("Comparaison semaine", S_H2))
+        def _fmt_p(v): return f"{v:.1f}%" if v is not None else "—"
+        def _delta(a, b):
+            if a is None or b is None: return "—"
+            d = a - b
+            sign = "+" if d > 0 else ""
+            return f"{sign}{d:.1f}pts"
+        cmp_data = [
+            [Paragraph("Indicateur", S_TH), Paragraph(week_compare.get("this_week_label","S. courante"), S_TH_C), Paragraph(week_compare.get("last_week_label","S. précédente"), S_TH_C), Paragraph("Variation", S_TH_C)],
+            [Paragraph("TRS", S_BODY), Paragraph(_fmt_p(tw.get("trs")), S_NUM), Paragraph(_fmt_p(lw.get("trs")), S_NUM), Paragraph(_delta(tw.get("trs"), lw.get("trs")), S_NUM)],
+            [Paragraph("Disponibilité", S_BODY), Paragraph(_fmt_p(tw.get("disponibilite")), S_NUM), Paragraph(_fmt_p(lw.get("disponibilite")), S_NUM), Paragraph(_delta(tw.get("disponibilite"), lw.get("disponibilite")), S_NUM)],
+            [Paragraph("Qualité", S_BODY), Paragraph(_fmt_p(tw.get("taux_qualite")), S_NUM), Paragraph(_fmt_p(lw.get("taux_qualite")), S_NUM), Paragraph(_delta(tw.get("taux_qualite"), lw.get("taux_qualite")), S_NUM)],
+        ]
+        cmp_tbl = Table(cmp_data, colWidths=[USABLE_W*0.3, USABLE_W*0.23, USABLE_W*0.23, USABLE_W*0.24])
+        cmp_tbl.setStyle(TableStyle([
+            ('BACKGROUND',    (0,0), (-1,0),  NAVY),
+            ('TEXTCOLOR',     (0,0), (-1,0),  WHITE),
+            ('GRID',          (0,0), (-1,-1), 0.4, GRAY_BD),
+            ('ALIGN',         (1,0), (-1,-1), 'CENTER'),
+            ('VALIGN',        (0,0), (-1,-1), 'MIDDLE'),
+            *tbl_pad(),
+            *zebra(len(cmp_data)),
+        ]))
+        story.append(cmp_tbl)
+        story.append(Spacer(1, 0.4 * cm))
+
+    # ════════════════════════════════
     #  PIED DE PAGE
     # ════════════════════════════════
     story.append(HRFlowable(width='100%', thickness=0.5, color=GRAY_BD, spaceAfter=5))
@@ -961,6 +1096,8 @@ def download_pdf():
             "causes_values_list":json.loads(request.form.get("causes_values", "[]")),
             "famille_table":     json.loads(request.form.get("famille_table", "[]")),
             "insights":          json.loads(request.form.get("insights", "null")),
+            "trs_timeline":      json.loads(request.form.get("trs_timeline", "{}")),
+            "week_compare":      json.loads(request.form.get("week_compare", "{}")),
         }
         pdf_bytes = generate_pdf(data)
     except Exception as e:
