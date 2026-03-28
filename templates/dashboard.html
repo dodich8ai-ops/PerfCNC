@@ -9,68 +9,70 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --blue:    #1a56db;
-      --blue-lt: #eff6ff;
-      --green:   #16a34a;
-      --green-lt:#f0fdf4;
-      --red:     #dc2626;
-      --red-lt:  #fef2f2;
-      --gray:    #f8fafc;
-      --border:  #e2e8f0;
-      --text:    #1e293b;
-      --muted:   #64748b;
+      --navy:      #1F3864;
+      --navy-md:   #2c4f8c;
+      --navy-lt:   #e8eef8;
+      --orange:    #ED7D31;
+      --orange-lt: #fdf0e8;
+      --orange-dk: #c96520;
+      --gray-bg:   #f4f6f9;
+      --gray-bd:   #dde3ec;
+      --text:      #1a2333;
+      --muted:     #5a6a80;
+      --white:     #ffffff;
+      --green:     #1a7a4a;
+      --green-lt:  #e8f5ee;
+      --red:       #c0392b;
+      --red-lt:    #fdf0f0;
     }
 
     body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: var(--gray);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--gray-bg);
       color: var(--text);
       min-height: 100vh;
     }
 
-    /* ── NAV ── */
+    /* ── TOPBAR ── */
     nav {
-      background: #fff;
-      border-bottom: 1px solid var(--border);
-      padding: 0 2rem;
-      height: 60px;
+      background: var(--navy);
+      height: 58px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      padding: 0 1.75rem;
       position: sticky;
       top: 0;
-      z-index: 10;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(0,0,0,.25);
     }
 
-    .nav-logo {
+    .nav-left {
       display: flex;
       align-items: center;
-      gap: .6rem;
+      gap: .65rem;
       text-decoration: none;
     }
 
-    .nav-logo .icon {
-      width: 36px; height: 36px;
-      background: var(--blue);
-      border-radius: 8px;
-      color: #fff;
-      font-weight: 700;
-      font-size: 1.1rem;
+    .nav-mark {
+      width: 34px; height: 34px;
+      background: var(--orange);
+      border-radius: 7px;
       display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 1.05rem; color: #fff;
     }
 
-    .nav-logo span { font-weight: 700; color: var(--text); font-size: 1.1rem; }
+    .nav-name { color: #fff; font-weight: 700; font-size: 1.05rem; }
 
-    .nav-right { display: flex; align-items: center; gap: 1rem; }
+    .nav-right { display: flex; align-items: center; gap: .85rem; }
 
-    .badge-file {
-      font-size: .78rem;
-      background: #e0e7ff;
-      color: #3730a3;
-      padding: .25rem .65rem;
+    .nav-file {
+      font-size: .76rem;
+      background: rgba(255,255,255,.12);
+      color: #c8d8f0;
+      padding: .25rem .7rem;
       border-radius: 20px;
-      font-weight: 500;
-      max-width: 220px;
+      max-width: 200px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -79,302 +81,427 @@
     .btn-back {
       display: inline-flex;
       align-items: center;
-      gap: .4rem;
-      padding: .4rem .9rem;
-      background: var(--blue);
+      gap: .35rem;
+      padding: .38rem .85rem;
+      background: var(--orange);
       color: #fff;
-      border: none;
       border-radius: 6px;
-      font-size: .85rem;
+      font-size: .82rem;
       font-weight: 600;
       text-decoration: none;
-      cursor: pointer;
       transition: background .2s;
     }
-    .btn-back:hover { background: #1447c0; }
+    .btn-back:hover { background: var(--orange-dk); }
 
     /* ── LAYOUT ── */
-    main { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+    main { max-width: 1280px; margin: 0 auto; padding: 1.75rem; }
 
-    .section-title {
-      font-size: 1.1rem;
+    .section-label {
+      font-size: .7rem;
       font-weight: 700;
-      color: var(--text);
-      margin-bottom: 1rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      margin-bottom: .85rem;
       display: flex;
       align-items: center;
-      gap: .5rem;
+      gap: .6rem;
     }
-
-    .section-title::after {
+    .section-label::after {
       content: '';
       flex: 1;
       height: 1px;
-      background: var(--border);
-      margin-left: .5rem;
+      background: var(--gray-bd);
     }
 
     /* ── KPI CARDS ── */
-    .kpi-grid {
+    .kpi-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 1rem;
-      margin-bottom: 2rem;
+      margin-bottom: 1.75rem;
     }
+
+    @media (max-width: 700px) { .kpi-row { grid-template-columns: 1fr; } }
 
     .kpi-card {
-      background: #fff;
+      background: var(--white);
       border-radius: 10px;
-      border: 1px solid var(--border);
-      padding: 1.25rem 1.5rem;
+      border: 1px solid var(--gray-bd);
+      padding: 1.4rem 1.5rem;
       display: flex;
-      flex-direction: column;
-      gap: .3rem;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 1px 6px rgba(31,56,100,.06);
     }
 
-    .kpi-label {
-      font-size: .78rem;
-      color: var(--muted);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .05em;
+    .kpi-icon {
+      width: 48px; height: 48px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      flex-shrink: 0;
     }
+    .kpi-icon.blue   { background: var(--navy-lt); }
+    .kpi-icon.orange { background: var(--orange-lt); }
+    .kpi-icon.red    { background: var(--red-lt); }
 
-    .kpi-value {
-      font-size: 2rem;
-      font-weight: 700;
+    .kpi-body {}
+    .kpi-val {
+      font-size: 1.9rem;
+      font-weight: 800;
       line-height: 1;
     }
+    .kpi-val.blue   { color: var(--navy); }
+    .kpi-val.orange { color: var(--orange); }
+    .kpi-val.red    { color: var(--red); }
 
-    .kpi-card.blue  .kpi-value { color: var(--blue); }
-    .kpi-card.green .kpi-value { color: var(--green); }
-    .kpi-card.red   .kpi-value { color: var(--red); }
+    .kpi-lbl {
+      font-size: .78rem;
+      color: var(--muted);
+      margin-top: .25rem;
+      font-weight: 500;
+    }
 
-    .kpi-card.blue  { border-top: 3px solid var(--blue); }
-    .kpi-card.green { border-top: 3px solid var(--green); }
-    .kpi-card.red   { border-top: 3px solid var(--red); }
-
-    .kpi-sub { font-size: .82rem; color: var(--muted); }
-
-    /* ── PANELS ── */
+    /* ── PANEL GRID ── */
     .panels {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-      margin-bottom: 2rem;
+      gap: 1.25rem;
+      margin-bottom: 1.75rem;
     }
 
-    @media (max-width: 780px) { .panels { grid-template-columns: 1fr; } }
+    @media (max-width: 860px) { .panels { grid-template-columns: 1fr; } }
 
     .panel {
-      background: #fff;
+      background: var(--white);
       border-radius: 10px;
-      border: 1px solid var(--border);
+      border: 1px solid var(--gray-bd);
       padding: 1.5rem;
+      box-shadow: 0 1px 6px rgba(31,56,100,.06);
     }
 
-    .chart-container { position: relative; height: 300px; }
-
-    /* ── TABLES ── */
-    .table-wrap {
-      overflow-x: auto;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
+    .panel-title {
       font-size: .9rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: .45rem;
     }
+    .panel-title .accent { color: var(--orange); }
+
+    .chart-box { position: relative; height: 280px; }
+
+    /* ── TABLE ── */
+    .table-scroll { overflow-x: auto; border-radius: 8px; border: 1px solid var(--gray-bd); }
+
+    table { width: 100%; border-collapse: collapse; font-size: .87rem; }
 
     thead th {
-      background: #f1f5f9;
-      padding: .75rem 1rem;
+      background: var(--navy);
+      color: #c8d8f0;
+      padding: .65rem 1rem;
       text-align: left;
+      font-size: .72rem;
       font-weight: 600;
-      font-size: .78rem;
-      color: var(--muted);
       text-transform: uppercase;
-      letter-spacing: .04em;
-      border-bottom: 1px solid var(--border);
+      letter-spacing: .06em;
       white-space: nowrap;
     }
 
-    tbody tr:nth-child(even) { background: #fafafa; }
-
     tbody td {
-      padding: .65rem 1rem;
-      border-bottom: 1px solid var(--border);
+      padding: .6rem 1rem;
+      border-bottom: 1px solid var(--gray-bd);
       color: var(--text);
     }
-
     tbody tr:last-child td { border-bottom: none; }
-    tbody tr:hover { background: var(--blue-lt); }
+    tbody tr:hover { background: var(--navy-lt); }
+    tbody tr:nth-child(even) { background: #f8fafc; }
+    tbody tr:nth-child(even):hover { background: var(--navy-lt); }
 
     td.num { text-align: right; font-variant-numeric: tabular-nums; }
 
-    .tag {
+    .tag-famille {
       display: inline-block;
-      padding: .2rem .55rem;
-      border-radius: 4px;
-      font-size: .78rem;
+      background: var(--navy-lt);
+      color: var(--navy);
+      font-size: .76rem;
       font-weight: 600;
-      background: #e0e7ff;
-      color: #3730a3;
+      padding: .2rem .6rem;
+      border-radius: 4px;
+    }
+
+    /* ── IA INSIGHTS ── */
+    .insights-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.1rem;
+      margin-bottom: 1.75rem;
+    }
+
+    @media (max-width: 780px) { .insights-grid { grid-template-columns: 1fr; } }
+
+    .insight-card {
+      border-radius: 10px;
+      border: 1px solid;
+      padding: 1.25rem 1.35rem;
+      display: flex;
+      flex-direction: column;
+      gap: .55rem;
+      box-shadow: 0 1px 6px rgba(0,0,0,.06);
+    }
+
+    .insight-card.probleme {
+      background: var(--red-lt);
+      border-color: #f5c6c6;
+    }
+    .insight-card.tendance {
+      background: var(--orange-lt);
+      border-color: #f8d5b3;
+    }
+    .insight-card.recommandation {
+      background: var(--green-lt);
+      border-color: #b3dfc7;
+    }
+
+    .insight-header {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .insight-card.probleme      .insight-header { color: var(--red); }
+    .insight-card.tendance      .insight-header { color: var(--orange-dk); }
+    .insight-card.recommandation .insight-header { color: var(--green); }
+
+    .insight-icon { font-size: 1.2rem; }
+
+    .insight-text {
+      font-size: .9rem;
+      line-height: 1.55;
+      color: var(--text);
+    }
+
+    .ia-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      font-size: .72rem;
+      background: var(--navy-lt);
+      color: var(--navy);
+      border: 1px solid #c8d8f0;
+      padding: .2rem .6rem;
+      border-radius: 20px;
+      font-weight: 600;
+      margin-bottom: .5rem;
     }
 
     /* ── PREVIEW ── */
-    .preview-section { margin-top: 2rem; }
+    .preview-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: .75rem;
+    }
 
     .toggle-btn {
       background: none;
-      border: 1px solid var(--border);
+      border: 1px solid var(--gray-bd);
       border-radius: 6px;
-      padding: .4rem .9rem;
-      font-size: .85rem;
+      padding: .35rem .8rem;
+      font-size: .82rem;
       cursor: pointer;
-      color: var(--blue);
+      color: var(--navy);
       font-weight: 500;
-      transition: background .2s;
+      transition: background .15s, border-color .15s;
     }
-    .toggle-btn:hover { background: var(--blue-lt); }
+    .toggle-btn:hover { background: var(--navy-lt); border-color: var(--navy); }
 
-    #preview-table { margin-top: 1rem; }
+    #preview-table { display: none; }
 
+    /* ── FOOTER ── */
     footer {
       text-align: center;
-      color: var(--muted);
-      font-size: .78rem;
-      padding: 2rem 0 1rem;
+      color: #9aafc4;
+      font-size: .75rem;
+      padding: 1.75rem 0 1rem;
+      border-top: 1px solid var(--gray-bd);
+      margin-top: .5rem;
     }
   </style>
 </head>
 <body>
 
+<!-- NAV -->
 <nav>
-  <a href="/" class="nav-logo">
-    <div class="icon">P</div>
-    <span>PerfCNC</span>
+  <a href="/" class="nav-left">
+    <div class="nav-mark">P</div>
+    <span class="nav-name">PerfCNC</span>
   </a>
   <div class="nav-right">
-    <span class="badge-file" title="{{ filename }}">📄 {{ filename }}</span>
+    <span class="nav-file" title="{{ filename }}">📄 {{ filename }}</span>
     <a href="/" class="btn-back">← Nouvel import</a>
   </div>
 </nav>
 
 <main>
 
-  <!-- KPI -->
-  <div class="section-title">Indicateurs clés</div>
-  <div class="kpi-grid">
-    <div class="kpi-card blue">
-      <div class="kpi-label">Nombre de saisies</div>
-      <div class="kpi-value">{{ total_saisies }}</div>
-      <div class="kpi-sub">lignes importées</div>
+  <!-- ── KPIs ── -->
+  <div class="section-label">Indicateurs clés</div>
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-icon blue">📋</div>
+      <div class="kpi-body">
+        <div class="kpi-val blue">{{ total_saisies }}</div>
+        <div class="kpi-lbl">Total saisies</div>
+      </div>
     </div>
-    <div class="kpi-card green">
-      <div class="kpi-label">Moyenne heures produites</div>
-      <div class="kpi-value">{{ moyenne_heures }}</div>
-      <div class="kpi-sub">heures / saisie</div>
+    <div class="kpi-card">
+      <div class="kpi-icon orange">⏱️</div>
+      <div class="kpi-body">
+        <div class="kpi-val orange">{{ moyenne_heures }}</div>
+        <div class="kpi-lbl">Heures produites (moy.)</div>
+      </div>
     </div>
-    <div class="kpi-card red">
-      <div class="kpi-label">Total rebuts (Pièces KO)</div>
-      <div class="kpi-value">{{ total_rebuts }}</div>
-      <div class="kpi-sub">pièces non conformes</div>
+    <div class="kpi-card">
+      <div class="kpi-icon red">⚠️</div>
+      <div class="kpi-body">
+        <div class="kpi-val red">{{ total_rebuts }}</div>
+        <div class="kpi-lbl">Total pièces KO (rebuts)</div>
+      </div>
     </div>
   </div>
 
-  <!-- Chart + Famille table -->
+  <!-- ── GRAPHIQUES ── -->
+  <div class="section-label">Analyse graphique</div>
   <div class="panels">
     <div class="panel">
-      <div class="section-title">Causes d'arrêt</div>
-      <div class="chart-container">
+      <div class="panel-title">📊 Causes d'arrêt <span class="accent">— occurrences</span></div>
+      <div class="chart-box">
         <canvas id="causesChart"></canvas>
       </div>
     </div>
-
     <div class="panel">
-      <div class="section-title">Résumé par famille</div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Famille</th>
-              <th>Saisies</th>
-              <th>Heures prod.</th>
-              <th>Pièces KO</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for row in famille_table %}
-            <tr>
-              <td><span class="tag">{{ row['Famille'] or '–' }}</span></td>
-              <td class="num">{{ row['Saisies'] }}</td>
-              <td class="num">{{ row['Heures produites'] }}</td>
-              <td class="num">{{ row['Pièces KO'] }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+      <div class="panel-title">🥧 Répartition <span class="accent">par famille</span></div>
+      <div class="chart-box">
+        <canvas id="familleChart"></canvas>
       </div>
     </div>
   </div>
 
-  <!-- Preview table -->
-  <div class="preview-section">
-    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.5rem;">
-      <div class="section-title" style="margin-bottom:0;flex:1">Aperçu des données <small style="color:#94a3b8;font-weight:400;font-size:.85rem">(50 premières lignes)</small></div>
-      <button class="toggle-btn" onclick="togglePreview()">Afficher / Masquer</button>
+  <!-- ── TABLEAU FAMILLE ── -->
+  <div class="section-label">Tableau par famille</div>
+  <div class="panel" style="margin-bottom:1.75rem;">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Famille</th>
+            <th>Saisies</th>
+            <th>Heures produites</th>
+            <th>Pièces KO</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in famille_table %}
+          <tr>
+            <td><span class="tag-famille">{{ row['Famille'] or '—' }}</span></td>
+            <td class="num">{{ row['Saisies'] }}</td>
+            <td class="num">{{ row['Heures produites'] }}</td>
+            <td class="num">{{ row['Pièces KO'] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
-    <div id="preview-table" style="display:none;">
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              {% for col in colonnes %}
-              <th>{{ col }}</th>
-              {% endfor %}
-            </tr>
-          </thead>
-          <tbody>
-            {% for row in preview %}
-            <tr>
-              {% for col in colonnes %}
-              <td>{{ row[col] if row[col] is not none else '–' }}</td>
-              {% endfor %}
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+  </div>
+
+  <!-- ── IA INSIGHTS ── -->
+  {% if insights %}
+  <div class="section-label">Analyse IA</div>
+  <div class="ia-badge">🤖 Généré par IA — Ollama local</div>
+  <div class="insights-grid">
+    <div class="insight-card probleme">
+      <div class="insight-header">
+        <span class="insight-icon">🔴</span> Problème principal
       </div>
+      <div class="insight-text">{{ insights.probleme_principal }}</div>
+    </div>
+    <div class="insight-card tendance">
+      <div class="insight-header">
+        <span class="insight-icon">🟠</span> Tendance détectée
+      </div>
+      <div class="insight-text">{{ insights.tendance }}</div>
+    </div>
+    <div class="insight-card recommandation">
+      <div class="insight-header">
+        <span class="insight-icon">🟢</span> Recommandation
+      </div>
+      <div class="insight-text">{{ insights.recommandation }}</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── PREVIEW ── -->
+  <div class="preview-header">
+    <div class="section-label" style="flex:1;margin-bottom:0;">
+      Aperçu des données
+      <small style="color:#9aafc4;font-weight:400;font-size:.8rem;">(50 premières lignes)</small>
+    </div>
+    <button class="toggle-btn" onclick="togglePreview()">Afficher / Masquer</button>
+  </div>
+
+  <div id="preview-table">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            {% for col in colonnes %}<th>{{ col }}</th>{% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in preview %}
+          <tr>
+            {% for col in colonnes %}
+            <td>{{ row[col] if row[col] is not none else '—' }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
 
 </main>
 
-<footer>PerfCNC &copy; {{ 2026 }} – Tableau de bord production CNC</footer>
+<footer>PerfCNC &copy; 2026 — Tableau de bord performance atelier CNC</footer>
 
 <script>
-  // ── Bar chart – Causes d'arrêt ──
-  const labels = {{ causes_labels | safe }};
-  const values = {{ causes_values | safe }};
-
-  const palette = [
-    '#1a56db','#7c3aed','#db2777','#d97706','#16a34a',
-    '#0891b2','#9333ea','#b45309','#dc2626','#059669',
+  // ── Palette industrielle ──
+  const NAVY   = '#1F3864';
+  const ORANGE = '#ED7D31';
+  const COLORS = [
+    '#1F3864','#ED7D31','#2c4f8c','#c96520','#4472C4',
+    '#FFC000','#70AD47','#FF0000','#00B0F0','#7030A0',
   ];
 
-  const colors = labels.map((_, i) => palette[i % palette.length]);
+  // ── Causes d'arrêt — barres ──
+  const causesLabels = {{ causes_labels | safe }};
+  const causesValues = {{ causes_values | safe }};
 
   new Chart(document.getElementById('causesChart'), {
     type: 'bar',
     data: {
-      labels: labels,
+      labels: causesLabels,
       datasets: [{
         label: 'Occurrences',
-        data: values,
-        backgroundColor: colors,
+        data: causesValues,
+        backgroundColor: causesLabels.map((_, i) => COLORS[i % COLORS.length]),
         borderRadius: 5,
         borderSkipped: false,
       }]
@@ -386,7 +513,6 @@
         legend: { display: false },
         tooltip: {
           callbacks: {
-            title: ctx => ctx[0].label,
             label: ctx => ` ${ctx.parsed.y} occurrence${ctx.parsed.y > 1 ? 's' : ''}`,
           }
         }
@@ -394,16 +520,46 @@
       scales: {
         x: {
           grid: { display: false },
-          ticks: {
-            font: { size: 11 },
-            maxRotation: 35,
-            color: '#64748b',
-          }
+          ticks: { font: { size: 10 }, maxRotation: 35, color: '#5a6a80' }
         },
         y: {
           beginAtZero: true,
-          grid: { color: '#f1f5f9' },
-          ticks: { precision: 0, color: '#64748b' },
+          grid: { color: '#edf0f5' },
+          ticks: { precision: 0, color: '#5a6a80' }
+        }
+      }
+    }
+  });
+
+  // ── Familles — camembert ──
+  const famLabels = {{ famille_pie_labels | safe }};
+  const famValues = {{ famille_pie_values | safe }};
+
+  new Chart(document.getElementById('familleChart'), {
+    type: 'doughnut',
+    data: {
+      labels: famLabels,
+      datasets: [{
+        data: famValues,
+        backgroundColor: COLORS,
+        borderWidth: 2,
+        borderColor: '#f4f6f9',
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '58%',
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: { font: { size: 11 }, color: '#1a2333', boxWidth: 14, padding: 12 }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.label} : ${ctx.parsed} saisie${ctx.parsed > 1 ? 's' : ''}`,
+          }
         }
       }
     }

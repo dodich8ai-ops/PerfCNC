@@ -3,55 +3,141 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PerfCNC – Import Excel</title>
+  <title>PerfCNC – Analysez la performance de votre atelier</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --navy:    #1F3864;
+      --navy-md: #2c4f8c;
+      --orange:  #ED7D31;
+      --orange-lt: #fdf0e8;
+      --gray-bg: #f4f6f9;
+      --gray-bd: #dde3ec;
+      --text:    #1a2333;
+      --muted:   #5a6a80;
+      --white:   #ffffff;
+    }
+
     body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: #f0f4f8;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--gray-bg);
+      color: var(--text);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
     }
 
-    .card {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 24px rgba(0,0,0,.08);
-      padding: 3rem 2.5rem;
-      max-width: 520px;
-      width: 100%;
-    }
-
-    .logo {
+    /* ── HEADER ── */
+    header {
+      background: var(--navy);
+      padding: 1rem 2rem;
       display: flex;
       align-items: center;
       gap: .75rem;
-      margin-bottom: 2rem;
     }
 
-    .logo-icon {
-      width: 44px;
-      height: 44px;
-      background: #1a56db;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .logo-mark {
+      width: 40px; height: 40px;
+      background: var(--orange);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 1.15rem; color: #fff;
+      flex-shrink: 0;
+    }
+
+    .logo-name { font-weight: 700; font-size: 1.2rem; color: #fff; letter-spacing: .02em; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-md) 100%);
       color: #fff;
-      font-size: 1.3rem;
-      font-weight: 700;
+      text-align: center;
+      padding: 4rem 2rem 3rem;
     }
 
-    .logo-text h1 { font-size: 1.4rem; color: #1e293b; font-weight: 700; }
-    .logo-text p  { font-size: .85rem; color: #64748b; }
+    .hero h1 {
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: .75rem;
+    }
 
+    .hero h1 span { color: var(--orange); }
+
+    .hero p {
+      font-size: 1.05rem;
+      color: #b8c8e0;
+      max-width: 540px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    .hero-badges {
+      display: flex;
+      justify-content: center;
+      gap: .75rem;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.2);
+      color: #d0dff0;
+      font-size: .78rem;
+      padding: .3rem .75rem;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+
+    /* ── MAIN ── */
+    main {
+      flex: 1;
+      max-width: 640px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem;
+    }
+
+    /* ── ALERTS ── */
+    .alert {
+      padding: .85rem 1.1rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      font-size: .9rem;
+      display: flex;
+      align-items: flex-start;
+      gap: .6rem;
+    }
+    .alert-danger {
+      background: #fff0f0;
+      color: #c0392b;
+      border: 1px solid #f5c6c6;
+    }
+
+    /* ── UPLOAD CARD ── */
+    .card {
+      background: var(--white);
+      border-radius: 12px;
+      border: 1px solid var(--gray-bd);
+      box-shadow: 0 2px 16px rgba(31,56,100,.07);
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .card-title {
+      font-size: .75rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 1.25rem;
+    }
+
+    /* ── DROP ZONE ── */
     .drop-zone {
-      border: 2px dashed #cbd5e1;
+      border: 2px dashed var(--gray-bd);
       border-radius: 10px;
       padding: 2.5rem 1.5rem;
       text-align: center;
@@ -62,8 +148,8 @@
 
     .drop-zone:hover,
     .drop-zone.dragover {
-      border-color: #1a56db;
-      background: #eff6ff;
+      border-color: var(--orange);
+      background: var(--orange-lt);
     }
 
     .drop-zone input[type="file"] {
@@ -75,138 +161,190 @@
       height: 100%;
     }
 
-    .drop-icon { font-size: 2.5rem; margin-bottom: .75rem; }
+    .drop-icon { font-size: 2.8rem; margin-bottom: .75rem; line-height: 1; }
 
-    .drop-zone p { color: #475569; font-size: .95rem; line-height: 1.5; }
-    .drop-zone span { color: #1a56db; font-weight: 600; }
+    .drop-zone .primary-text {
+      font-size: .95rem;
+      color: var(--muted);
+      margin-bottom: .3rem;
+    }
 
-    .file-hint {
-      font-size: .8rem;
-      color: #94a3b8;
-      margin-top: .5rem;
+    .drop-zone .primary-text strong { color: var(--orange); cursor: pointer; }
+
+    .drop-zone .hint {
+      font-size: .78rem;
+      color: #9aafc4;
     }
 
     #file-name {
-      margin-top: 1rem;
+      margin-top: .9rem;
       font-size: .85rem;
-      color: #1a56db;
-      font-weight: 500;
+      color: var(--navy);
+      font-weight: 600;
       min-height: 1.2rem;
     }
 
-    .btn {
+    /* ── SUBMIT ── */
+    .btn-submit {
       display: block;
       width: 100%;
-      padding: .85rem;
-      background: #1a56db;
+      padding: .95rem;
+      background: var(--orange);
       color: #fff;
       border: none;
       border-radius: 8px;
       font-size: 1rem;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
-      margin-top: 1.5rem;
-      transition: background .2s;
+      margin-top: 1.25rem;
+      transition: background .2s, transform .1s;
+      letter-spacing: .02em;
+    }
+    .btn-submit:hover:not(:disabled) {
+      background: #d96b1c;
+      transform: translateY(-1px);
+    }
+    .btn-submit:disabled {
+      background: #c5cdd8;
+      cursor: not-allowed;
+      transform: none;
     }
 
-    .btn:hover { background: #1447c0; }
-    .btn:disabled { background: #94a3b8; cursor: not-allowed; }
-
-    .alert {
-      padding: .85rem 1rem;
-      border-radius: 8px;
-      margin-bottom: 1.5rem;
-      font-size: .9rem;
+    /* ── COLONNES INFO ── */
+    .columns-card {
+      background: var(--white);
+      border-radius: 12px;
+      border: 1px solid var(--gray-bd);
+      box-shadow: 0 2px 16px rgba(31,56,100,.07);
+      padding: 1.5rem 2rem;
     }
 
-    .alert-danger { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
-    .alert-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
-
-    .columns-info {
-      margin-top: 1.5rem;
-      padding: 1rem;
-      background: #f8fafc;
-      border-radius: 8px;
-      border: 1px solid #e2e8f0;
-    }
-
-    .columns-info p {
-      font-size: .8rem;
-      color: #64748b;
-      margin-bottom: .5rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .04em;
-    }
-
-    .columns-info ul {
-      list-style: none;
+    .columns-header {
       display: flex;
-      flex-wrap: wrap;
-      gap: .4rem;
+      align-items: center;
+      gap: .5rem;
+      margin-bottom: 1rem;
     }
 
-    .columns-info li {
-      background: #e0e7ff;
-      color: #3730a3;
+    .columns-header .icon {
+      width: 28px; height: 28px;
+      background: var(--navy);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .85rem; color: #fff;
+    }
+
+    .columns-header p {
+      font-size: .85rem;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    .columns-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .5rem;
+    }
+
+    .col-item {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      font-size: .85rem;
+      color: var(--text);
+      padding: .4rem .6rem;
+      background: #f4f6f9;
+      border-radius: 6px;
+    }
+
+    .col-item .dot {
+      width: 6px; height: 6px;
+      background: var(--orange);
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 1.5rem;
       font-size: .78rem;
-      padding: .2rem .55rem;
-      border-radius: 4px;
-      font-weight: 500;
+      color: #9aafc4;
+      border-top: 1px solid var(--gray-bd);
     }
   </style>
 </head>
 <body>
 
-<div class="card">
-  <div class="logo">
-    <div class="logo-icon">P</div>
-    <div class="logo-text">
-      <h1>PerfCNC</h1>
-      <p>Tableau de bord production</p>
-    </div>
-  </div>
+<header>
+  <div class="logo-mark">P</div>
+  <span class="logo-name">PerfCNC</span>
+</header>
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-      <div class="alert alert-{{ category }}">{{ message }}</div>
-    {% endfor %}
-  {% endwith %}
-
-  <form action="/upload" method="post" enctype="multipart/form-data" id="upload-form">
-    <div class="drop-zone" id="drop-zone">
-      <input type="file" name="file" id="file-input" accept=".xlsx,.xls" />
-      <div class="drop-icon">📊</div>
-      <p><span>Cliquez pour choisir</span> ou glissez votre fichier ici</p>
-      <p class="file-hint">Formats acceptés : .xlsx, .xls</p>
-      <div id="file-name"></div>
-    </div>
-
-    <button type="submit" class="btn" id="submit-btn" disabled>
-      Analyser le fichier
-    </button>
-  </form>
-
-  <div class="columns-info">
-    <p>Colonnes attendues dans le fichier</p>
-    <ul>
-      <li>Date</li>
-      <li>Équipe</li>
-      <li>Code CRMX</li>
-      <li>Référence pièce</li>
-      <li>Famille</li>
-      <li>Cause arrêt</li>
-      <li>Heures produites</li>
-      <li>Pièces KO</li>
-    </ul>
+<div class="hero">
+  <h1>Analysez la performance<br>de votre <span>atelier CNC</span></h1>
+  <p>Importez votre fichier Excel et obtenez des insights en 30 secondes — KPIs, graphiques et analyse IA inclus.</p>
+  <div class="hero-badges">
+    <span class="badge">📊 KPIs automatiques</span>
+    <span class="badge">📈 Graphiques interactifs</span>
+    <span class="badge">🤖 Analyse IA Ollama</span>
+    <span class="badge">🔒 Données traitées localement</span>
   </div>
 </div>
 
+<main>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">
+        <span>⚠️</span>
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="card">
+    <div class="card-title">Importer un fichier Excel</div>
+    <form action="/upload" method="post" enctype="multipart/form-data" id="upload-form">
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" name="file" id="file-input" accept=".xlsx,.xls" />
+        <div class="drop-icon">📂</div>
+        <p class="primary-text"><strong>Cliquez pour sélectionner</strong> ou glissez votre fichier ici</p>
+        <p class="hint">Formats acceptés : .xlsx · .xls · max 16 Mo</p>
+        <div id="file-name"></div>
+      </div>
+      <button type="submit" class="btn-submit" id="submit-btn" disabled>
+        Analyser le fichier →
+      </button>
+    </form>
+  </div>
+
+  <div class="columns-card">
+    <div class="columns-header">
+      <div class="icon">≡</div>
+      <p>Colonnes attendues dans le fichier</p>
+    </div>
+    <div class="columns-list">
+      <div class="col-item"><span class="dot"></span>Date</div>
+      <div class="col-item"><span class="dot"></span>Équipe</div>
+      <div class="col-item"><span class="dot"></span>Code CRMX</div>
+      <div class="col-item"><span class="dot"></span>Référence pièce</div>
+      <div class="col-item"><span class="dot"></span>Famille</div>
+      <div class="col-item"><span class="dot"></span>Cause arrêt</div>
+      <div class="col-item"><span class="dot"></span>Heures produites</div>
+      <div class="col-item"><span class="dot"></span>Pièces KO</div>
+    </div>
+  </div>
+
+</main>
+
+<footer>PerfCNC &copy; 2026 — Tableau de bord performance atelier CNC</footer>
+
 <script>
-  const input = document.getElementById('file-input');
-  const btn   = document.getElementById('submit-btn');
-  const label = document.getElementById('file-name');
-  const zone  = document.getElementById('drop-zone');
+  const input  = document.getElementById('file-input');
+  const btn    = document.getElementById('submit-btn');
+  const label  = document.getElementById('file-name');
+  const zone   = document.getElementById('drop-zone');
 
   input.addEventListener('change', () => {
     if (input.files.length > 0) {
@@ -218,16 +356,16 @@
     }
   });
 
-  ['dragenter','dragover'].forEach(e => {
-    zone.addEventListener(e, ev => { ev.preventDefault(); zone.classList.add('dragover'); });
-  });
-  ['dragleave','drop'].forEach(e => {
-    zone.addEventListener(e, ev => { ev.preventDefault(); zone.classList.remove('dragover'); });
-  });
+  ['dragenter', 'dragover'].forEach(e =>
+    zone.addEventListener(e, ev => { ev.preventDefault(); zone.classList.add('dragover'); })
+  );
+  ['dragleave', 'drop'].forEach(e =>
+    zone.addEventListener(e, ev => { ev.preventDefault(); zone.classList.remove('dragover'); })
+  );
 
   document.getElementById('upload-form').addEventListener('submit', () => {
     btn.disabled = true;
-    btn.textContent = 'Chargement…';
+    btn.textContent = '⏳ Analyse en cours…';
   });
 </script>
 
