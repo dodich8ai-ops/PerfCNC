@@ -12,6 +12,14 @@ from werkzeug.utils import secure_filename
 # ─────────────────────────────────────────────
 USE_CLAUDE_API = False
 
+# ─────────────────────────────────────────────
+#  PARAMÈTRE CONFIGURABLE
+#  Durée théorique d'un poste en heures.
+#  Sert au calcul du TRS, de la Disponibilité
+#  et des Heures d'ouverture théoriques.
+# ─────────────────────────────────────────────
+HEURES_POSTE = 8
+
 app = Flask(__name__)
 app.secret_key = "perfcnc_secret_key"
 
@@ -20,6 +28,9 @@ ALLOWED_EXTENSIONS = {"xlsx", "xls"}
 
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB max
+
+# Colonne optionnelle pour le Taux qualité
+COLONNE_TOTAL_PIECES = "Total pièces"
 
 COLONNES_REQUISES = [
     "Date",
@@ -130,6 +141,49 @@ def analyze_with_ollama(stats: dict) -> dict | None:
 
 
 # ─────────────────────────────────────────────
+#  INDICATEURS DE PERFORMANCE
+# ─────────────────────────────────────────────
+def compute_indicators(df: "pd.DataFrame") -> dict:
+    """
+    Calcule TRS, Disponibilité et Taux qualité à partir du DataFrame.
+    Chaque ligne représente un poste de HEURES_POSTE heures théoriques.
+
+    - Disponibilité = Σ(Heures produites) / (n × HEURES_POSTE) × 100
+    - TRS           = Disponibilité × (Taux qualité / 100) si qualité dispo,
+                      sinon = Disponibilité (modèle simplifié sans cadence)
+    - Taux qualité  = (Σ Total pièces - Σ Pièces KO) / Σ Total pièces × 100
+                      uniquement si la colonne "Total pièces" est présente.
+    """
+    n = len(df)
+    heures_ouverture = n * HEURES_POSTE
+    heures_produites = df["Heures produites"].sum()
+
+    disponibilite = round((heures_produites / heures_ouverture) * 100, 1) if heures_ouverture > 0 else None
+
+    # Taux qualité — nécessite la colonne optionnelle "Total pièces"
+    taux_qualite = None
+    if COLONNE_TOTAL_PIECES in df.columns:
+        total_pieces = pd.to_numeric(df[COLONNE_TOTAL_PIECES], errors="coerce").fillna(0).sum()
+        pieces_ko = df["Pièces KO"].sum()
+        if total_pieces > 0:
+            taux_qualite = round(((total_pieces - pieces_ko) / total_pieces) * 100, 1)
+
+    # TRS : Disponibilité × Qualité si les deux sont dispo, sinon Disponibilité seule
+    if disponibilite is not None and taux_qualite is not None:
+        trs = round(disponibilite * (taux_qualite / 100), 1)
+    else:
+        trs = disponibilite  # modèle simplifié
+
+    return {
+        "trs": trs,
+        "disponibilite": disponibilite,
+        "taux_qualite": taux_qualite,
+        "heures_ouverture_theoriques": round(heures_ouverture, 2),
+        "heures_poste": HEURES_POSTE,
+    }
+
+
+# ─────────────────────────────────────────────
 #  HELPERS
 # ─────────────────────────────────────────────
 def allowed_file(filename):
@@ -185,6 +239,9 @@ def process_excel(filepath):
     famille_pie_labels = famille_group["Famille"].fillna("Inconnue").tolist()
     famille_pie_values = famille_group["Saisies"].tolist()
 
+    # ── Indicateurs de performance ──
+    indicateurs = compute_indicators(df)
+
     # ── Aperçu ──
     preview = df.head(50).to_dict(orient="records")
 
@@ -209,6 +266,7 @@ def process_excel(filepath):
         "preview": preview,
         "colonnes": COLONNES_REQUISES,
         "insights": insights,
+        "indicateurs": indicateurs,
     }
 
 
@@ -218,6 +276,16 @@ def process_excel(filepath):
 @app.route("/", methods=["GET"])
 def index():
     return render_template("index.html")
+
+
+@app.route("/glossaire")
+def glossaire():
+    return render_template("glossaire.html")
+
+
+@app.route("/comment-ca-marche")
+def comment_ca_marche():
+    return render_template("how_it_works.html")
 
 
 @app.route("/upload", methods=["POST"])

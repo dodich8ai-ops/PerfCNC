@@ -48,6 +48,19 @@
 
     .logo-name { font-weight: 700; font-size: 1.2rem; color: #fff; letter-spacing: .02em; }
 
+    .header-link {
+      color: #c8d8f0;
+      font-size: .83rem;
+      font-weight: 500;
+      text-decoration: none;
+      border: 1px solid rgba(255,255,255,.2);
+      padding: .3rem .75rem;
+      border-radius: 6px;
+      transition: background .2s, color .2s;
+      margin-left: auto;
+    }
+    .header-link:hover { background: rgba(255,255,255,.1); color: #fff; }
+
     /* ── HERO ── */
     .hero {
       background: linear-gradient(135deg, var(--navy) 0%, var(--navy-md) 100%);
@@ -279,6 +292,8 @@
 <header>
   <div class="logo-mark">P</div>
   <span class="logo-name">PerfCNC</span>
+  <a href="/comment-ca-marche" class="header-link" style="margin-left:0;">❓ Comment ça marche</a>
+  <a href="/glossaire" class="header-link" style="margin-left:0;">📖 Glossaire</a>
 </header>
 
 <div class="hero">

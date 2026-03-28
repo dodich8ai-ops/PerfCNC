@@ -93,6 +93,105 @@
     }
     .btn-back:hover { background: var(--orange-dk); }
 
+    .nav-link {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .38rem .85rem;
+      color: #c8d8f0;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 6px;
+      font-size: .82rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background .2s, color .2s;
+    }
+    .nav-link:hover { background: rgba(255,255,255,.1); color: #fff; }
+
+    /* ── INDICATEURS DE PERFORMANCE ── */
+    .perf-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+    }
+    @media (max-width: 700px) { .perf-row { grid-template-columns: 1fr; } }
+
+    .perf-card {
+      background: var(--white);
+      border-radius: 10px;
+      border: 1px solid var(--gray-bd);
+      padding: 1.25rem 1.5rem;
+      box-shadow: 0 1px 6px rgba(31,56,100,.06);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .perf-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 4px;
+      border-radius: 10px 0 0 10px;
+    }
+    .perf-card.trs::before        { background: var(--navy); }
+    .perf-card.dispo::before      { background: #2980b9; }
+    .perf-card.qualite::before    { background: var(--green); }
+
+    .perf-label {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      margin-bottom: .4rem;
+    }
+
+    .perf-value {
+      font-size: 2.1rem;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: .3rem;
+    }
+    .perf-card.trs     .perf-value { color: var(--navy); }
+    .perf-card.dispo   .perf-value { color: #2980b9; }
+    .perf-card.qualite .perf-value { color: var(--green); }
+
+    .perf-unit { font-size: 1.1rem; font-weight: 600; }
+
+    .perf-sub {
+      font-size: .78rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .perf-bar-track {
+      height: 5px;
+      background: var(--gray-bd);
+      border-radius: 3px;
+      margin-top: .75rem;
+      overflow: hidden;
+    }
+    .perf-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width .6s ease;
+    }
+    .perf-card.trs     .perf-bar-fill { background: var(--navy); }
+    .perf-card.dispo   .perf-bar-fill { background: #2980b9; }
+    .perf-card.qualite .perf-bar-fill { background: var(--green); }
+
+    .perf-nd {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #aab8cc;
+    }
+    .perf-nd-sub {
+      font-size: .76rem;
+      color: #aab8cc;
+      margin-top: .2rem;
+    }
+
     /* ── LAYOUT ── */
     main { max-width: 1280px; margin: 0 auto; padding: 1.75rem; }
 
@@ -345,6 +444,8 @@
   </a>
   <div class="nav-right">
     <span class="nav-file" title="{{ filename }}">📄 {{ filename }}</span>
+    <a href="/comment-ca-marche" class="nav-link">❓ Comment ça marche</a>
+    <a href="/glossaire" class="nav-link">📖 Glossaire</a>
     <a href="/" class="btn-back">← Nouvel import</a>
   </div>
 </nav>
@@ -375,6 +476,67 @@
         <div class="kpi-lbl">Total pièces KO (rebuts)</div>
       </div>
     </div>
+  </div>
+
+  <!-- ── INDICATEURS DE PERFORMANCE ── -->
+  <div class="section-label">
+    Indicateurs de performance
+    <a href="/glossaire" style="font-size:.72rem;color:var(--orange);font-weight:600;text-decoration:none;letter-spacing:.02em;">ℹ Définitions →</a>
+  </div>
+  <div class="perf-row">
+
+    {# TRS #}
+    <div class="perf-card trs">
+      <div class="perf-label">TRS — Taux de Rendement Synthétique</div>
+      {% if indicateurs.trs is not none %}
+        <div class="perf-value">{{ indicateurs.trs }}<span class="perf-unit"> %</span></div>
+        <div class="perf-sub">
+          Base : {{ indicateurs.heures_poste }}h/poste ·
+          {{ indicateurs.heures_ouverture_theoriques }}h théoriques
+        </div>
+        <div class="perf-bar-track">
+          <div class="perf-bar-fill" style="width:{{ [indicateurs.trs, 100] | min }}%"></div>
+        </div>
+      {% else %}
+        <div class="perf-nd">N/D</div>
+        <div class="perf-nd-sub">Données insuffisantes</div>
+      {% endif %}
+    </div>
+
+    {# Disponibilité #}
+    <div class="perf-card dispo">
+      <div class="perf-label">Disponibilité machine</div>
+      {% if indicateurs.disponibilite is not none %}
+        <div class="perf-value">{{ indicateurs.disponibilite }}<span class="perf-unit"> %</span></div>
+        <div class="perf-sub">
+          Heures produites / Heures ouverture théoriques
+        </div>
+        <div class="perf-bar-track">
+          <div class="perf-bar-fill" style="width:{{ [indicateurs.disponibilite, 100] | min }}%"></div>
+        </div>
+      {% else %}
+        <div class="perf-nd">N/D</div>
+        <div class="perf-nd-sub">Données insuffisantes</div>
+      {% endif %}
+    </div>
+
+    {# Taux qualité #}
+    <div class="perf-card qualite">
+      <div class="perf-label">Taux qualité</div>
+      {% if indicateurs.taux_qualite is not none %}
+        <div class="perf-value">{{ indicateurs.taux_qualite }}<span class="perf-unit"> %</span></div>
+        <div class="perf-sub">
+          (Total pièces − Pièces KO) / Total pièces
+        </div>
+        <div class="perf-bar-track">
+          <div class="perf-bar-fill" style="width:{{ [indicateurs.taux_qualite, 100] | min }}%"></div>
+        </div>
+      {% else %}
+        <div class="perf-nd">N/D</div>
+        <div class="perf-nd-sub">Colonne « Total pièces » absente du fichier</div>
+      {% endif %}
+    </div>
+
   </div>
 
   <!-- ── GRAPHIQUES ── -->
