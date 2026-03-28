@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PerfCNC – Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:    #1a56db;
+      --blue-lt: #eff6ff;
+      --green:   #16a34a;
+      --green-lt:#f0fdf4;
+      --red:     #dc2626;
+      --red-lt:  #fef2f2;
+      --gray:    #f8fafc;
+      --border:  #e2e8f0;
+      --text:    #1e293b;
+      --muted:   #64748b;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--gray);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── NAV ── */
+    nav {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      text-decoration: none;
+    }
+
+    .nav-logo .icon {
+      width: 36px; height: 36px;
+      background: var(--blue);
+      border-radius: 8px;
+      color: #fff;
+      font-weight: 700;
+      font-size: 1.1rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .nav-logo span { font-weight: 700; color: var(--text); font-size: 1.1rem; }
+
+    .nav-right { display: flex; align-items: center; gap: 1rem; }
+
+    .badge-file {
+      font-size: .78rem;
+      background: #e0e7ff;
+      color: #3730a3;
+      padding: .25rem .65rem;
+      border-radius: 20px;
+      font-weight: 500;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .4rem .9rem;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: .85rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-back:hover { background: #1447c0; }
+
+    /* ── LAYOUT ── */
+    main { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+      margin-left: .5rem;
+    }
+
+    /* ── KPI CARDS ── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .kpi-card {
+      background: #fff;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: .3rem;
+    }
+
+    .kpi-label {
+      font-size: .78rem;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .kpi-value {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .kpi-card.blue  .kpi-value { color: var(--blue); }
+    .kpi-card.green .kpi-value { color: var(--green); }
+    .kpi-card.red   .kpi-value { color: var(--red); }
+
+    .kpi-card.blue  { border-top: 3px solid var(--blue); }
+    .kpi-card.green { border-top: 3px solid var(--green); }
+    .kpi-card.red   { border-top: 3px solid var(--red); }
+
+    .kpi-sub { font-size: .82rem; color: var(--muted); }
+
+    /* ── PANELS ── */
+    .panels {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 780px) { .panels { grid-template-columns: 1fr; } }
+
+    .panel {
+      background: #fff;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+    }
+
+    .chart-container { position: relative; height: 300px; }
+
+    /* ── TABLES ── */
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .9rem;
+    }
+
+    thead th {
+      background: #f1f5f9;
+      padding: .75rem 1rem;
+      text-align: left;
+      font-weight: 600;
+      font-size: .78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    tbody tr:nth-child(even) { background: #fafafa; }
+
+    tbody td {
+      padding: .65rem 1rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: var(--blue-lt); }
+
+    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+    .tag {
+      display: inline-block;
+      padding: .2rem .55rem;
+      border-radius: 4px;
+      font-size: .78rem;
+      font-weight: 600;
+      background: #e0e7ff;
+      color: #3730a3;
+    }
+
+    /* ── PREVIEW ── */
+    .preview-section { margin-top: 2rem; }
+
+    .toggle-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: .4rem .9rem;
+      font-size: .85rem;
+      cursor: pointer;
+      color: var(--blue);
+      font-weight: 500;
+      transition: background .2s;
+    }
+    .toggle-btn:hover { background: var(--blue-lt); }
+
+    #preview-table { margin-top: 1rem; }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: .78rem;
+      padding: 2rem 0 1rem;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">
+    <div class="icon">P</div>
+    <span>PerfCNC</span>
+  </a>
+  <div class="nav-right">
+    <span class="badge-file" title="{{ filename }}">📄 {{ filename }}</span>
+    <a href="/" class="btn-back">← Nouvel import</a>
+  </div>
+</nav>
+
+<main>
+
+  <!-- KPI -->
+  <div class="section-title">Indicateurs clés</div>
+  <div class="kpi-grid">
+    <div class="kpi-card blue">
+      <div class="kpi-label">Nombre de saisies</div>
+      <div class="kpi-value">{{ total_saisies }}</div>
+      <div class="kpi-sub">lignes importées</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Moyenne heures produites</div>
+      <div class="kpi-value">{{ moyenne_heures }}</div>
+      <div class="kpi-sub">heures / saisie</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">Total rebuts (Pièces KO)</div>
+      <div class="kpi-value">{{ total_rebuts }}</div>
+      <div class="kpi-sub">pièces non conformes</div>
+    </div>
+  </div>
+
+  <!-- Chart + Famille table -->
+  <div class="panels">
+    <div class="panel">
+      <div class="section-title">Causes d'arrêt</div>
+      <div class="chart-container">
+        <canvas id="causesChart"></canvas>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section-title">Résumé par famille</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Famille</th>
+              <th>Saisies</th>
+              <th>Heures prod.</th>
+              <th>Pièces KO</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in famille_table %}
+            <tr>
+              <td><span class="tag">{{ row['Famille'] or '–' }}</span></td>
+              <td class="num">{{ row['Saisies'] }}</td>
+              <td class="num">{{ row['Heures produites'] }}</td>
+              <td class="num">{{ row['Pièces KO'] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preview table -->
+  <div class="preview-section">
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:.5rem;">
+      <div class="section-title" style="margin-bottom:0;flex:1">Aperçu des données <small style="color:#94a3b8;font-weight:400;font-size:.85rem">(50 premières lignes)</small></div>
+      <button class="toggle-btn" onclick="togglePreview()">Afficher / Masquer</button>
+    </div>
+    <div id="preview-table" style="display:none;">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              {% for col in colonnes %}
+              <th>{{ col }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in preview %}
+            <tr>
+              {% for col in colonnes %}
+              <td>{{ row[col] if row[col] is not none else '–' }}</td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>PerfCNC &copy; {{ 2026 }} – Tableau de bord production CNC</footer>
+
+<script>
+  // ── Bar chart – Causes d'arrêt ──
+  const labels = {{ causes_labels | safe }};
+  const values = {{ causes_values | safe }};
+
+  const palette = [
+    '#1a56db','#7c3aed','#db2777','#d97706','#16a34a',
+    '#0891b2','#9333ea','#b45309','#dc2626','#059669',
+  ];
+
+  const colors = labels.map((_, i) => palette[i % palette.length]);
+
+  new Chart(document.getElementById('causesChart'), {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Occurrences',
+        data: values,
+        backgroundColor: colors,
+        borderRadius: 5,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: ctx => ctx[0].label,
+            label: ctx => ` ${ctx.parsed.y} occurrence${ctx.parsed.y > 1 ? 's' : ''}`,
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: {
+            font: { size: 11 },
+            maxRotation: 35,
+            color: '#64748b',
+          }
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: '#f1f5f9' },
+          ticks: { precision: 0, color: '#64748b' },
+        }
+      }
+    }
+  });
+
+  function togglePreview() {
+    const el = document.getElementById('preview-table');
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  }
+</script>
+
+</body>
+</html>

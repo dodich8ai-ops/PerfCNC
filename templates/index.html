@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PerfCNC – Import Excel</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.08);
+      padding: 3rem 2.5rem;
+      max-width: 520px;
+      width: 100%;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      margin-bottom: 2rem;
+    }
+
+    .logo-icon {
+      width: 44px;
+      height: 44px;
+      background: #1a56db;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+
+    .logo-text h1 { font-size: 1.4rem; color: #1e293b; font-weight: 700; }
+    .logo-text p  { font-size: .85rem; color: #64748b; }
+
+    .drop-zone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 10px;
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      position: relative;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.dragover {
+      border-color: #1a56db;
+      background: #eff6ff;
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .drop-icon { font-size: 2.5rem; margin-bottom: .75rem; }
+
+    .drop-zone p { color: #475569; font-size: .95rem; line-height: 1.5; }
+    .drop-zone span { color: #1a56db; font-weight: 600; }
+
+    .file-hint {
+      font-size: .8rem;
+      color: #94a3b8;
+      margin-top: .5rem;
+    }
+
+    #file-name {
+      margin-top: 1rem;
+      font-size: .85rem;
+      color: #1a56db;
+      font-weight: 500;
+      min-height: 1.2rem;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: .85rem;
+      background: #1a56db;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 1.5rem;
+      transition: background .2s;
+    }
+
+    .btn:hover { background: #1447c0; }
+    .btn:disabled { background: #94a3b8; cursor: not-allowed; }
+
+    .alert {
+      padding: .85rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      font-size: .9rem;
+    }
+
+    .alert-danger { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+    .alert-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+
+    .columns-info {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: #f8fafc;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .columns-info p {
+      font-size: .8rem;
+      color: #64748b;
+      margin-bottom: .5rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .columns-info ul {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+    }
+
+    .columns-info li {
+      background: #e0e7ff;
+      color: #3730a3;
+      font-size: .78rem;
+      padding: .2rem .55rem;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon">P</div>
+    <div class="logo-text">
+      <h1>PerfCNC</h1>
+      <p>Tableau de bord production</p>
+    </div>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <form action="/upload" method="post" enctype="multipart/form-data" id="upload-form">
+    <div class="drop-zone" id="drop-zone">
+      <input type="file" name="file" id="file-input" accept=".xlsx,.xls" />
+      <div class="drop-icon">📊</div>
+      <p><span>Cliquez pour choisir</span> ou glissez votre fichier ici</p>
+      <p class="file-hint">Formats acceptés : .xlsx, .xls</p>
+      <div id="file-name"></div>
+    </div>
+
+    <button type="submit" class="btn" id="submit-btn" disabled>
+      Analyser le fichier
+    </button>
+  </form>
+
+  <div class="columns-info">
+    <p>Colonnes attendues dans le fichier</p>
+    <ul>
+      <li>Date</li>
+      <li>Équipe</li>
+      <li>Code CRMX</li>
+      <li>Référence pièce</li>
+      <li>Famille</li>
+      <li>Cause arrêt</li>
+      <li>Heures produites</li>
+      <li>Pièces KO</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+  const input = document.getElementById('file-input');
+  const btn   = document.getElementById('submit-btn');
+  const label = document.getElementById('file-name');
+  const zone  = document.getElementById('drop-zone');
+
+  input.addEventListener('change', () => {
+    if (input.files.length > 0) {
+      label.textContent = '✔ ' + input.files[0].name;
+      btn.disabled = false;
+    } else {
+      label.textContent = '';
+      btn.disabled = true;
+    }
+  });
+
+  ['dragenter','dragover'].forEach(e => {
+    zone.addEventListener(e, ev => { ev.preventDefault(); zone.classList.add('dragover'); });
+  });
+  ['dragleave','drop'].forEach(e => {
+    zone.addEventListener(e, ev => { ev.preventDefault(); zone.classList.remove('dragover'); });
+  });
+
+  document.getElementById('upload-form').addEventListener('submit', () => {
+    btn.disabled = true;
+    btn.textContent = 'Chargement…';
+  });
+</script>
+
+</body>
+</html>
