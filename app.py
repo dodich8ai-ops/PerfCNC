@@ -1155,6 +1155,8 @@ def upload():
         flash(str(e), "danger")
         return redirect(url_for("index"))
     except Exception as e:
+        import traceback
+        print(traceback.format_exc())
         flash(f"Erreur lors de la lecture du fichier : {e}", "danger")
         return redirect(url_for("index"))
     finally:
