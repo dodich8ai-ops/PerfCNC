@@ -277,6 +277,40 @@
       flex-shrink: 0;
     }
 
+    /* ── CGU CONSENT ── */
+    .cgu-block {
+      margin-top: 1.1rem;
+      padding: .9rem 1rem;
+      background: #f8fafc;
+      border: 1px solid var(--gray-bd);
+      border-radius: 8px;
+      display: flex;
+      align-items: flex-start;
+      gap: .65rem;
+    }
+
+    .cgu-block input[type="checkbox"] {
+      width: 16px; height: 16px;
+      margin-top: 2px;
+      accent-color: var(--navy);
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    .cgu-block label {
+      font-size: .83rem;
+      color: var(--muted);
+      line-height: 1.5;
+      cursor: pointer;
+    }
+
+    .cgu-block label a {
+      color: var(--navy);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .cgu-block label a:hover { text-decoration: underline; }
+
     /* ── FOOTER ── */
     footer {
       text-align: center;
@@ -294,6 +328,7 @@
   <span class="logo-name">PerfCNC</span>
   <a href="/comment-ca-marche" class="header-link" style="margin-left:0;">❓ Comment ça marche</a>
   <a href="/glossaire" class="header-link" style="margin-left:0;">📖 Glossaire</a>
+  <a href="/cgu" class="header-link" style="margin-left:0;">⚖️ CGU</a>
 </header>
 
 <div class="hero">
@@ -328,6 +363,17 @@
         <p class="hint">Formats acceptés : .xlsx · .xls · max 16 Mo</p>
         <div id="file-name"></div>
       </div>
+      {% if not cgu_accepted %}
+      <div class="cgu-block">
+        <input type="checkbox" name="cgu_consent" id="cgu_consent" required />
+        <label for="cgu_consent">
+          J'accepte les <a href="/cgu" target="_blank">Conditions Générales d'Utilisation</a> —
+          version gratuite : mes données anonymisées (KPIs agrégés uniquement,
+          jamais de données brutes) peuvent améliorer le service.
+        </label>
+      </div>
+      {% endif %}
+
       <button type="submit" class="btn-submit" id="submit-btn" disabled>
         Analyser le fichier →
       </button>

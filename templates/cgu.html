@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PerfCNC – Conditions Générales d'Utilisation</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:    #1F3864;
+      --navy-md: #2c4f8c;
+      --navy-lt: #e8eef8;
+      --orange:  #ED7D31;
+      --orange-lt: #fdf0e8;
+      --orange-dk: #c96520;
+      --gray-bg: #f4f6f9;
+      --gray-bd: #dde3ec;
+      --text:    #1a2333;
+      --muted:   #5a6a80;
+      --white:   #ffffff;
+      --green:   #1a7a4a;
+      --green-lt:#e8f5ee;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--gray-bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── NAV ── */
+    nav {
+      background: var(--navy);
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.75rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(0,0,0,.25);
+    }
+
+    .nav-left {
+      display: flex; align-items: center; gap: .65rem; text-decoration: none;
+    }
+
+    .nav-mark {
+      width: 34px; height: 34px;
+      background: var(--orange);
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 1.05rem; color: #fff;
+    }
+
+    .nav-name { color: #fff; font-weight: 700; font-size: 1.05rem; }
+
+    .btn-back {
+      display: inline-flex; align-items: center; gap: .35rem;
+      padding: .38rem .85rem;
+      background: var(--orange); color: #fff;
+      border-radius: 6px; font-size: .82rem; font-weight: 600;
+      text-decoration: none; transition: background .2s;
+    }
+    .btn-back:hover { background: var(--orange-dk); }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-md) 100%);
+      padding: 2.5rem 2rem;
+      text-align: center;
+    }
+    .hero h1 { color: #fff; font-size: 1.5rem; font-weight: 800; margin-bottom: .4rem; }
+    .hero h1 span { color: var(--orange); }
+    .hero p  { color: #b8c8e0; font-size: .88rem; max-width: 480px; margin: 0 auto; }
+
+    /* ── LAYOUT ── */
+    main {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ── VERSION CARDS ── */
+    .version-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-bottom: .5rem;
+    }
+    @media (max-width: 640px) { .version-grid { grid-template-columns: 1fr; } }
+
+    .version-card {
+      border-radius: 10px;
+      border: 2px solid;
+      padding: 1.5rem;
+      position: relative;
+    }
+
+    .version-card.gratuite {
+      background: var(--navy-lt);
+      border-color: #c8d8f0;
+    }
+    .version-card.pro {
+      background: var(--orange-lt);
+      border-color: #f8c49a;
+    }
+
+    .version-badge {
+      display: inline-block;
+      font-size: .7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      padding: .2rem .7rem;
+      border-radius: 20px;
+      margin-bottom: .85rem;
+    }
+    .version-card.gratuite .version-badge { background: var(--navy); color: #fff; }
+    .version-card.pro      .version-badge { background: var(--orange); color: #fff; }
+
+    .version-title {
+      font-size: 1.05rem; font-weight: 700;
+      margin-bottom: .6rem;
+    }
+    .version-card.gratuite .version-title { color: var(--navy); }
+    .version-card.pro      .version-title { color: var(--orange-dk); }
+
+    .version-list {
+      list-style: none;
+      display: flex; flex-direction: column; gap: .45rem;
+    }
+
+    .version-list li {
+      font-size: .87rem;
+      color: var(--text);
+      display: flex;
+      align-items: flex-start;
+      gap: .5rem;
+      line-height: 1.5;
+    }
+
+    .version-list li::before {
+      content: '✓';
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: .05rem;
+    }
+    .version-card.gratuite .version-list li::before { color: var(--navy); }
+    .version-card.pro      .version-list li::before { color: var(--orange); }
+
+    .version-list li.denied::before { content: '✗'; color: #c0392b; }
+    .version-list li.denied { color: var(--muted); }
+
+    /* ── ARTICLE SECTIONS ── */
+    .cgu-section {
+      background: var(--white);
+      border-radius: 10px;
+      border: 1px solid var(--gray-bd);
+      box-shadow: 0 1px 6px rgba(31,56,100,.06);
+      overflow: hidden;
+    }
+
+    .cgu-section-head {
+      background: var(--navy);
+      padding: .75rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+    }
+
+    .cgu-section-head span { font-size: 1rem; }
+
+    .cgu-section-head h2 {
+      color: #fff;
+      font-size: .9rem;
+      font-weight: 700;
+    }
+
+    .cgu-section-body {
+      padding: 1.25rem 1.5rem;
+    }
+
+    .cgu-section-body p {
+      font-size: .88rem;
+      line-height: 1.7;
+      color: var(--text);
+      margin-bottom: .65rem;
+    }
+    .cgu-section-body p:last-child { margin-bottom: 0; }
+
+    .cgu-section-body ul {
+      list-style: none;
+      display: flex; flex-direction: column; gap: .4rem;
+      margin: .5rem 0;
+    }
+    .cgu-section-body ul li {
+      font-size: .87rem;
+      line-height: 1.5;
+      color: var(--text);
+      padding-left: 1.2rem;
+      position: relative;
+    }
+    .cgu-section-body ul li::before {
+      content: '·';
+      position: absolute;
+      left: .4rem;
+      color: var(--orange);
+      font-weight: 700;
+    }
+
+    .highlight-box {
+      background: var(--green-lt);
+      border: 1px solid #b3dfc7;
+      border-radius: 7px;
+      padding: .85rem 1rem;
+      font-size: .85rem;
+      color: var(--green);
+      font-weight: 600;
+      line-height: 1.5;
+      margin-top: .75rem;
+    }
+
+    .warn-box {
+      background: var(--orange-lt);
+      border: 1px solid #f8c49a;
+      border-radius: 7px;
+      padding: .85rem 1rem;
+      font-size: .85rem;
+      color: var(--orange-dk);
+      font-weight: 600;
+      line-height: 1.5;
+      margin-top: .75rem;
+    }
+
+    .article-number {
+      font-size: .7rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: .3rem;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      color: #9aafc4;
+      font-size: .75rem;
+      padding: 1.5rem;
+      border-top: 1px solid var(--gray-bd);
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-left">
+    <div class="nav-mark">P</div>
+    <span class="nav-name">PerfCNC</span>
+  </a>
+  <a href="/" class="btn-back">← Retour</a>
+</nav>
+
+<div class="hero">
+  <h1>Conditions Générales <span>d'Utilisation</span></h1>
+  <p>Transparence totale sur le traitement de vos données selon votre version</p>
+</div>
+
+<main>
+
+  <!-- ── COMPARATIF VERSIONS ── -->
+  <div class="version-grid">
+
+    <div class="version-card gratuite">
+      <span class="version-badge">Version gratuite</span>
+      <div class="version-title">PerfCNC Free</div>
+      <ul class="version-list">
+        <li>Upload et analyse Excel illimités</li>
+        <li>Dashboard complet (KPIs, graphiques, TRS)</li>
+        <li>Analyse IA via Ollama en local</li>
+        <li>Export PDF</li>
+        <li class="denied">KPIs agrégés anonymisés envoyés pour améliorer le service</li>
+        <li class="denied">Pas de garantie de confidentialité totale</li>
+      </ul>
+    </div>
+
+    <div class="version-card pro">
+      <span class="version-badge">Version Pro</span>
+      <div class="version-title">PerfCNC Pro</div>
+      <ul class="version-list">
+        <li>Toutes les fonctionnalités Free</li>
+        <li>Analyse IA via API Claude (claude-opus-4-6)</li>
+        <li>Zéro collecte de données — confidentialité totale</li>
+        <li>Données traitées exclusivement en local</li>
+        <li>Support prioritaire</li>
+        <li>SLA garanti</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- ── ART. 1 — OBJET ── -->
+  <div class="cgu-section">
+    <div class="cgu-section-head">
+      <span>📋</span>
+      <h2>Article 1 — Objet et champ d'application</h2>
+    </div>
+    <div class="cgu-section-body">
+      <div class="article-number">Art. 1</div>
+      <p>
+        Les présentes Conditions Générales d'Utilisation (CGU) régissent l'utilisation de
+        l'application PerfCNC, outil d'analyse de performance pour ateliers d'usinage CNC.
+        En utilisant PerfCNC, vous acceptez les présentes CGU dans leur intégralité.
+      </p>
+      <p>
+        PerfCNC est proposé en deux versions : une version <strong>gratuite</strong> avec collecte
+        anonymisée de statistiques agrégées, et une version <strong>Pro</strong> avec confidentialité
+        totale des données.
+      </p>
+    </div>
+  </div>
+
+  <!-- ── ART. 2 — DONNÉES VERSION GRATUITE ── -->
+  <div class="cgu-section">
+    <div class="cgu-section-head">
+      <span>🔓</span>
+      <h2>Article 2 — Traitement des données — Version gratuite</h2>
+    </div>
+    <div class="cgu-section-body">
+      <div class="article-number">Art. 2</div>
+      <p>
+        En version gratuite, après chaque analyse, les <strong>statistiques agrégées suivantes</strong>
+        sont sauvegardées localement à des fins d'amélioration du service :
+      </p>
+      <ul>
+        <li>Nombre total de saisies (entier)</li>
+        <li>Moyenne des heures produites (valeur numérique)</li>
+        <li>Total des pièces KO (entier)</li>
+        <li>Répartition des causes d'arrêt (dictionnaire cause → nombre d'occurrences)</li>
+        <li>Répartition par famille de pièces (dictionnaire famille → nombre de saisies)</li>
+        <li>TRS calculé, si disponible (pourcentage)</li>
+      </ul>
+
+      <div class="highlight-box">
+        ✓ Ce qui n'est JAMAIS collecté : nom de fichier · dates réelles · références pièces ·
+        codes équipe · données brutes ligne par ligne · toute information permettant
+        d'identifier votre atelier ou vos clients.
+      </div>
+
+      <p style="margin-top:.75rem;">
+        Chaque enregistrement est associé à un identifiant aléatoire unique (hash SHA-256 d'un
+        sel aléatoire) qui ne permet aucune corrélation entre plusieurs analyses d'un même utilisateur.
+      </p>
+    </div>
+  </div>
+
+  <!-- ── ART. 3 — DONNÉES VERSION PRO ── -->
+  <div class="cgu-section">
+    <div class="cgu-section-head">
+      <span>🔒</span>
+      <h2>Article 3 — Traitement des données — Version Pro</h2>
+    </div>
+    <div class="cgu-section-body">
+      <div class="article-number">Art. 3</div>
+      <p>
+        En version Pro (<code>USE_CLAUDE_API = True</code>), <strong>aucune donnée n'est collectée</strong>
+        par PerfCNC. Les fichiers Excel sont traités en mémoire et supprimés immédiatement après analyse.
+        Aucun fichier temporaire n'est conservé sur le serveur.
+      </p>
+      <p>
+        Les données sont transmises à l'API Anthropic (Claude) uniquement sous forme de
+        <strong>statistiques agrégées</strong> (jamais de données brutes) pour générer les insights IA.
+        Ces transmissions sont soumises à la politique de confidentialité d'Anthropic.
+      </p>
+      <div class="warn-box">
+        ⚠ La version Pro nécessite une clé API Anthropic valide définie en variable d'environnement
+        <code>ANTHROPIC_API_KEY</code>. Les coûts d'utilisation de l'API sont à la charge de l'opérateur.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ART. 4 — FICHIERS EXCEL ── -->
+  <div class="cgu-section">
+    <div class="cgu-section-head">
+      <span>📁</span>
+      <h2>Article 4 — Traitement des fichiers uploadés</h2>
+    </div>
+    <div class="cgu-section-body">
+      <div class="article-number">Art. 4</div>
+      <p>
+        Les fichiers Excel uploadés sont traités comme suit, quelle que soit la version :
+      </p>
+      <ul>
+        <li>Chargé en mémoire vive pour analyse</li>
+        <li>Sauvegardé temporairement dans le dossier <code>uploads/</code> le temps de l'analyse</li>
+        <li>Supprimé immédiatement après traitement, y compris en cas d'erreur</li>
+        <li>Jamais transmis à un tiers (hors API Claude en version Pro, sous forme agrégée uniquement)</li>
+      </ul>
+      <p>
+        Pour les fichiers dépassant <strong>1 000 lignes</strong>, PerfCNC effectue automatiquement
+        un échantillonnage aléatoire de 200 lignes représentatives pour optimiser les performances
+        et les coûts IA. Un avertissement est affiché dans le dashboard.
+      </p>
+    </div>
+  </div>
+
+  <!-- ── ART. 5 — RESPONSABILITÉS ── -->
+  <div class="cgu-section">
+    <div class="cgu-section-head">
+      <span>⚖️</span>
+      <h2>Article 5 — Responsabilités et limitations</h2>
+    </div>
+    <div class="cgu-section-body">
+      <div class="article-number">Art. 5</div>
+      <p>
+        PerfCNC est un outil d'aide à la décision. Les insights générés par l'IA (Ollama ou Claude)
+        sont fournis à titre indicatif et ne constituent pas des recommandations professionnelles
+        certifiées. L'utilisateur reste seul responsable des décisions prises sur la base des analyses.
+      </p>
+      <p>
+        PerfCNC est fourni "tel quel", sans garantie de disponibilité continue. L'éditeur ne peut
+        être tenu responsable des pertes de données ou d'exploitation liées à une interruption de service.
+      </p>
+    </div>
+  </div>
+
+  <!-- ── ART. 6 — CONTACT ── -->
+  <div class="cgu-section">
+    <div class="cgu-section-head">
+      <span>✉️</span>
+      <h2>Article 6 — Contact et droit de retrait</h2>
+    </div>
+    <div class="cgu-section-body">
+      <div class="article-number">Art. 6</div>
+      <p>
+        Pour toute demande relative à vos données (accès, rectification, suppression), ou pour
+        signaler un problème, contactez-nous via le dépôt GitHub du projet.
+      </p>
+      <p>
+        Vous pouvez retirer votre consentement à tout moment en effaçant les cookies de session
+        de votre navigateur. Cela n'affecte pas la légalité des traitements effectués avant le retrait.
+      </p>
+      <p style="margin-top:.75rem; font-size:.8rem; color: var(--muted);">
+        Dernière mise à jour : mars 2026 — Version 1.0
+      </p>
+    </div>
+  </div>
+
+</main>
+
+<footer>PerfCNC &copy; 2026 — Conditions Générales d'Utilisation</footer>
+
+</body>
+</html>

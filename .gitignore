@@ -9,3 +9,5 @@ uploads/
 *.xls
 instance/
 .DS_Store
+# Données collectées anonymisées (jamais versionnées)
+data/collected/

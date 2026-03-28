@@ -423,6 +423,22 @@
 
     #preview-table { display: none; }
 
+    /* ── SAMPLE BANNER ── */
+    .sample-banner {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      border-radius: 9px;
+      padding: .75rem 1.1rem;
+      margin-bottom: 1rem;
+      font-size: .87rem;
+      color: #92400e;
+    }
+    .sample-banner .s-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .sample-banner strong { font-weight: 700; }
+
     /* ── PDF BUTTON ── */
     .pdf-bar {
       display: flex;
@@ -486,11 +502,25 @@
     <span class="nav-file" title="{{ filename }}">📄 {{ filename }}</span>
     <a href="/comment-ca-marche" class="nav-link">❓ Comment ça marche</a>
     <a href="/glossaire" class="nav-link">📖 Glossaire</a>
+    <a href="/cgu" class="nav-link">⚖️ CGU</a>
     <a href="/" class="btn-back">← Nouvel import</a>
   </div>
 </nav>
 
 <main>
+
+  <!-- ── BANDEAU ÉCHANTILLON ── -->
+  {% if sampled %}
+  <div class="sample-banner">
+    <span class="s-icon">⚡</span>
+    <span>
+      <strong>Fichier volumineux — analyse sur échantillon représentatif.</strong>
+      Votre fichier contient {{ original_size }} lignes. PerfCNC a sélectionné
+      {{ total_saisies }} lignes aléatoires pour garantir des performances optimales
+      et maîtriser les coûts IA.
+    </span>
+  </div>
+  {% endif %}
 
   <!-- ── BARRE PDF ── -->
   <div class="pdf-bar">

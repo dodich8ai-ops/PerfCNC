@@ -1,8 +1,10 @@
 import os
 import json
 import re
+import hashlib
+import datetime
 import pandas as pd
-from flask import Flask, render_template, request, redirect, url_for, flash, make_response
+from flask import Flask, render_template, request, redirect, url_for, flash, make_response, session
 from werkzeug.utils import secure_filename
 
 # ─────────────────────────────────────────────
@@ -20,8 +22,25 @@ USE_CLAUDE_API = False
 # ─────────────────────────────────────────────
 HEURES_POSTE = 8
 
+# ─────────────────────────────────────────────
+#  OPTIMISATION COÛT IA
+#  Au-delà de SAMPLE_THRESHOLD lignes, on
+#  échantillonne SAMPLE_SIZE lignes aléatoires
+#  pour les stats (résultat toujours représentatif).
+# ─────────────────────────────────────────────
+SAMPLE_THRESHOLD = 1000
+SAMPLE_SIZE      = 200
+
+# ─────────────────────────────────────────────
+#  COLLECTE ANONYMISÉE (version gratuite)
+#  Stats agrégées uniquement, jamais de données
+#  brutes ni de nom de fichier.
+# ─────────────────────────────────────────────
+DATA_COLLECT_DIR = os.path.join(os.path.dirname(__file__), "data", "collected")
+
 app = Flask(__name__)
-app.secret_key = "perfcnc_secret_key"
+# En production, définir SECRET_KEY dans les variables d'environnement.
+app.secret_key = os.environ.get("SECRET_KEY", "perfcnc_dev_secret_change_in_prod")
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "uploads")
 ALLOWED_EXTENSIONS = {"xlsx", "xls"}
@@ -184,6 +203,43 @@ def compute_indicators(df: "pd.DataFrame") -> dict:
 
 
 # ─────────────────────────────────────────────
+#  COLLECTE ANONYMISÉE
+# ─────────────────────────────────────────────
+def collect_anonymous_stats(stats: dict) -> None:
+    """
+    Sauvegarde les stats agrégées dans data/collected/ sous forme JSON.
+    Appelée uniquement si USE_CLAUDE_API=False (version gratuite) et
+    après consentement de l'utilisateur.
+
+    Règles strictes :
+      - Jamais le nom du fichier original
+      - Jamais les dates réelles des saisies
+      - Jamais les données brutes ligne par ligne
+      - Uniquement des KPIs agrégés et des dicts cause→nb
+    """
+    if USE_CLAUDE_API:
+        return  # version Pro : pas de collecte
+    try:
+        os.makedirs(DATA_COLLECT_DIR, exist_ok=True)
+        ts     = datetime.datetime.utcnow().strftime("%Y%m%d_%H%M%S_%f")
+        salt   = os.urandom(8).hex()
+        anon   = hashlib.sha256(f"{ts}{salt}".encode()).hexdigest()[:12]
+        fname  = f"{ts}_{anon}.json"
+        payload = {
+            "total_saisies":  stats.get("total_saisies"),
+            "moyenne_heures": stats.get("moyenne_heures"),
+            "total_rebuts":   stats.get("total_rebuts"),
+            "causes":         stats.get("causes", {}),
+            "familles":       stats.get("familles", {}),
+            "trs":            stats.get("trs"),
+        }
+        with open(os.path.join(DATA_COLLECT_DIR, fname), "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass  # Ne jamais crasher l'app pour la collecte
+
+
+# ─────────────────────────────────────────────
 #  HELPERS
 # ─────────────────────────────────────────────
 def allowed_file(filename):
@@ -206,6 +262,12 @@ def process_excel(filepath):
     df["Heures produites"] = pd.to_numeric(df["Heures produites"], errors="coerce").fillna(0)
     df["Pièces KO"] = pd.to_numeric(df["Pièces KO"], errors="coerce").fillna(0)
     df["Date"] = pd.to_datetime(df["Date"], errors="coerce").dt.strftime("%d/%m/%Y").fillna("")
+
+    # ── Échantillonnage pour fichiers volumineux ──
+    original_size = len(df)
+    sampled = original_size > SAMPLE_THRESHOLD
+    if sampled:
+        df = df.sample(n=SAMPLE_SIZE).reset_index(drop=True)
 
     # ── KPIs ──
     total_saisies = len(df)
@@ -238,6 +300,7 @@ def process_excel(filepath):
 
     famille_pie_labels = famille_group["Famille"].fillna("Inconnue").tolist()
     famille_pie_values = famille_group["Saisies"].tolist()
+    famille_dict       = dict(zip(famille_pie_labels, famille_pie_values))
 
     # ── Indicateurs de performance ──
     indicateurs = compute_indicators(df)
@@ -255,18 +318,22 @@ def process_excel(filepath):
     insights = analyze_with_ollama(stats_for_ia)
 
     return {
-        "total_saisies": total_saisies,
-        "moyenne_heures": moyenne_heures,
-        "total_rebuts": total_rebuts,
-        "causes_labels": json.dumps(causes_labels),
-        "causes_values": json.dumps(causes_values),
-        "famille_table": famille_table,
+        "total_saisies":      total_saisies,
+        "moyenne_heures":     moyenne_heures,
+        "total_rebuts":       total_rebuts,
+        "causes_labels":      json.dumps(causes_labels),
+        "causes_values":      json.dumps(causes_values),
+        "causes_dict":        causes_dict,
+        "famille_table":      famille_table,
         "famille_pie_labels": json.dumps(famille_pie_labels),
         "famille_pie_values": json.dumps(famille_pie_values),
-        "preview": preview,
-        "colonnes": COLONNES_REQUISES,
-        "insights": insights,
-        "indicateurs": indicateurs,
+        "famille_dict":       famille_dict,
+        "preview":            preview,
+        "colonnes":           COLONNES_REQUISES,
+        "insights":           insights,
+        "indicateurs":        indicateurs,
+        "sampled":            sampled,
+        "original_size":      original_size,
     }
 
 
@@ -596,7 +663,13 @@ def generate_pdf(data: dict) -> bytes:
 # ─────────────────────────────────────────────
 @app.route("/", methods=["GET"])
 def index():
-    return render_template("index.html")
+    return render_template("index.html",
+                           cgu_accepted=session.get("cgu_accepted", False))
+
+
+@app.route("/cgu")
+def cgu():
+    return render_template("cgu.html")
 
 
 @app.route("/glossaire")
@@ -639,6 +712,14 @@ def download_pdf():
 
 @app.route("/upload", methods=["POST"])
 def upload():
+    # ── Vérification consentement CGU ──
+    if not session.get("cgu_accepted"):
+        if request.form.get("cgu_consent") == "on":
+            session["cgu_accepted"] = True
+        else:
+            flash("Vous devez accepter les CGU pour utiliser PerfCNC.", "danger")
+            return redirect(url_for("index"))
+
     if "file" not in request.files:
         flash("Aucun fichier sélectionné.", "danger")
         return redirect(url_for("index"))
@@ -668,6 +749,16 @@ def upload():
     finally:
         if os.path.exists(filepath):
             os.remove(filepath)
+
+    # ── Collecte anonymisée (version gratuite uniquement) ──
+    collect_anonymous_stats({
+        "total_saisies":  data["total_saisies"],
+        "moyenne_heures": data["moyenne_heures"],
+        "total_rebuts":   data["total_rebuts"],
+        "causes":         data["causes_dict"],
+        "familles":       data["famille_dict"],
+        "trs":            data["indicateurs"].get("trs"),
+    })
 
     return render_template("dashboard.html", **data, filename=filename)
 
