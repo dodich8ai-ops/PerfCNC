@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#1F3864">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PerfCNC">
   <title>PerfCNC – Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
@@ -724,6 +729,35 @@
       border-top: 1px solid var(--gray-bd);
       margin-top: .5rem;
     }
+
+    /* ── DEMO BANNER ── */
+    .demo-banner {
+      background: #fdf0e8;
+      border: 1px solid #f8d5b3;
+      padding: .65rem 1.1rem;
+      border-radius: 8px;
+      font-size: .85rem;
+      color: #7a3a00;
+      margin-bottom: 1rem;
+    }
+    .demo-banner a { color: #c96520; font-weight: 600; text-decoration: none; }
+    .demo-banner a:hover { text-decoration: underline; }
+
+    /* ── WEEK COMPARISON ── */
+    .wk-section { margin-bottom: 1.5rem; }
+    .wk-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+    @media (max-width: 600px) { .wk-cards { grid-template-columns: 1fr; } }
+    .wk-card { background: var(--white); border: 1px solid var(--gray-bd); border-radius: 12px; padding: 1.1rem 1.25rem; }
+    .wk-card-title { font-size: .78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .75rem; }
+    .wk-kpi-row { display: flex; flex-direction: column; gap: .5rem; }
+    .wk-kpi { display: flex; justify-content: space-between; align-items: center; font-size: .88rem; }
+    .wk-kpi-lbl { color: var(--muted); }
+    .wk-kpi-val { font-weight: 700; color: var(--navy); }
+    .wk-delta { font-size: .82rem; font-weight: 700; margin-left: .4rem; }
+    .wk-delta.up { color: #1a7a4a; }
+    .wk-delta.down { color: #c0392b; }
+    .wk-delta.eq { color: var(--muted); }
+    .wk-no-data { font-size: .85rem; color: var(--muted); padding: .75rem 0; text-align: center; margin-bottom: 1.5rem; }
   </style>
 </head>
 <body>
@@ -740,6 +774,7 @@
     <a href="/exercices" class="nav-link">🧮 Exercices</a>
     <a href="/glossaire" class="nav-link">📖 Glossaire</a>
     <a href="/cgu" class="nav-link">⚖️ CGU</a>
+    <a href="/contact" class="nav-link">✉️ Contact</a>
     <a href="/" class="btn-back">← Nouvel import</a>
   </div>
 </nav>
@@ -809,7 +844,70 @@
     <input type="hidden" name="causes_values"  value="{{ causes_values | e }}">
     <input type="hidden" name="famille_table"  value="{{ famille_table | tojson | forceescape }}">
     <input type="hidden" name="insights"       value="{{ insights | tojson | forceescape }}">
+    <input type="hidden" name="trs_timeline"  value="{{ trs_timeline | tojson | forceescape }}">
+    <input type="hidden" name="week_compare"  value="{{ week_compare | default({}) | tojson | forceescape }}">
   </form>
+
+  {% if demo_mode %}
+  <div class="demo-banner">
+    Mode démo — vos données sont utilisées anonymement pour améliorer PerfCNC.
+    <a href="/register">Inscrivez-vous</a> pour garder vos données privées.
+  </div>
+  {% endif %}
+
+  <!-- ── Semaine vs semaine dernière ── -->
+  <div class="section-label">Cette semaine vs semaine dernière</div>
+  {% set tw = week_compare.get('this_week') if week_compare else None %}
+  {% set lw = week_compare.get('last_week') if week_compare else None %}
+  {% if tw and lw %}
+  <div class="wk-cards">
+    <div class="wk-card">
+      <div class="wk-card-title">{{ week_compare.this_week_label }}</div>
+      <div class="wk-kpi-row">
+        {% set trs_val = tw.trs %}
+        {% set trs_lw = lw.trs %}
+        <div class="wk-kpi">
+          <span class="wk-kpi-lbl">TRS</span>
+          <span class="wk-kpi-val">{{ "%.1f"|format(trs_val) if trs_val is not none else "—" }}%
+            {% if trs_val is not none and trs_lw is not none %}
+              {% set delta = trs_val - trs_lw %}
+              {% if delta > 0.1 %}<span class="wk-delta up">↑ +{{ "%.1f"|format(delta) }}pts</span>
+              {% elif delta < -0.1 %}<span class="wk-delta down">↓ {{ "%.1f"|format(delta) }}pts</span>
+              {% else %}<span class="wk-delta eq">= stable</span>{% endif %}
+            {% endif %}
+          </span>
+        </div>
+        <div class="wk-kpi">
+          <span class="wk-kpi-lbl">Rebuts</span>
+          <span class="wk-kpi-val">{{ tw.total_rebuts if tw.total_rebuts is defined else "—" }}</span>
+        </div>
+        <div class="wk-kpi">
+          <span class="wk-kpi-lbl">Heures produites</span>
+          <span class="wk-kpi-val">{{ "%.1f"|format(tw.total_heures) if tw.total_heures is defined else "—" }}h</span>
+        </div>
+      </div>
+    </div>
+    <div class="wk-card">
+      <div class="wk-card-title">{{ week_compare.last_week_label }}</div>
+      <div class="wk-kpi-row">
+        <div class="wk-kpi">
+          <span class="wk-kpi-lbl">TRS</span>
+          <span class="wk-kpi-val">{{ "%.1f"|format(lw.trs) if lw.trs is not none else "—" }}%</span>
+        </div>
+        <div class="wk-kpi">
+          <span class="wk-kpi-lbl">Rebuts</span>
+          <span class="wk-kpi-val">{{ lw.total_rebuts if lw.total_rebuts is defined else "—" }}</span>
+        </div>
+        <div class="wk-kpi">
+          <span class="wk-kpi-lbl">Heures produites</span>
+          <span class="wk-kpi-val">{{ "%.1f"|format(lw.total_heures) if lw.total_heures is defined else "—" }}h</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="wk-no-data">Importez au moins 2 semaines de données pour voir la comparaison.</div>
+  {% endif %}
 
   <!-- ── KPIs ── -->
   <div class="section-label">Indicateurs clés</div>
@@ -1586,6 +1684,14 @@
       document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
     }
   });
+</script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/static/sw.js').catch(() => {});
+    });
+  }
 </script>
 
 </body>

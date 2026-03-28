@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#1F3864">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PerfCNC">
   <title>PerfCNC – Analysez la performance de votre atelier</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -319,6 +324,31 @@
       color: #9aafc4;
       border-top: 1px solid var(--gray-bd);
     }
+
+    /* ── DEMO BUTTON ── */
+    .btn-demo {
+      display: inline-block;
+      background: #ED7D31;
+      color: #fff;
+      padding: .65rem 1.8rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: .97rem;
+      text-decoration: none;
+      transition: background .2s;
+    }
+    .btn-demo:hover { background: #c96520; }
+
+    @media (max-width: 600px) {
+      header { flex-wrap: wrap; gap: .4rem; padding: .75rem 1rem; }
+      .logo-mark { width: 32px; height: 32px; font-size: .95rem; }
+      .logo-name { font-size: 1rem; }
+      .header-link { font-size: .75rem; padding: .25rem .5rem; }
+      .hero { padding: 2.5rem 1rem 2rem; }
+      .hero h1 { font-size: 1.4rem; }
+      main { padding: 1rem; }
+      .card { padding: 1.25rem 1rem; }
+    }
   </style>
 </head>
 <body>
@@ -329,6 +359,7 @@
   <a href="/comment-ca-marche" class="header-link" style="margin-left:0;">❓ Comment ça marche</a>
   <a href="/glossaire" class="header-link" style="margin-left:0;">📖 Glossaire</a>
   <a href="/cgu" class="header-link" style="margin-left:0;">⚖️ CGU</a>
+  <a href="/contact" class="header-link" style="margin-left:0;">✉️ Contact</a>
   {% if current_user.is_authenticated %}
     <a href="/historique" class="header-link" style="margin-left:auto;">📋 Historique</a>
     <span style="color:#b8c8e0;font-size:.82rem;margin-left:.5rem;">{{ current_user.email }}</span>
@@ -350,6 +381,9 @@
     <span class="badge">📈 Graphiques interactifs</span>
     <span class="badge">🤖 Analyse IA Ollama</span>
     <span class="badge">🔒 Données traitées localement</span>
+  </div>
+  <div style="margin-top:1.5rem;">
+    <a href="/demo" class="btn-demo">▶ Voir la démo</a>
   </div>
 </div>
 
@@ -440,6 +474,14 @@
     btn.disabled = true;
     btn.textContent = '⏳ Analyse en cours…';
   });
+</script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/static/sw.js').catch(() => {});
+    });
+  }
 </script>
 
 </body>

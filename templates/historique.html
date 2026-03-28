@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#1F3864">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PerfCNC">
   <title>PerfCNC – Historique</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
@@ -100,6 +105,7 @@
   </a>
   <div style="display:flex;align-items:center;gap:.75rem;">
     <span style="color:#c8d8f0;font-size:.82rem;">{{ current_user.email }}</span>
+    <a href="/contact" class="nav-link">✉️ Contact</a>
     <a href="/logout" class="nav-link">🚪 Déconnexion</a>
     <a href="/" class="btn-back">+ Nouvelle analyse</a>
   </div>
@@ -287,6 +293,14 @@
   });
 </script>
 {% endif %}
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/static/sw.js').catch(() => {});
+    });
+  }
+</script>
 
 </body>
 </html>

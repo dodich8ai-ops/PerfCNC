@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="PerfCNC">
-  <title>PerfCNC – Connexion</title>
+  <title>PerfCNC – Contact</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -16,7 +16,7 @@
       --orange: #ED7D31; --orange-dk: #c96520; --orange-lt: #fdf0e8;
       --gray-bg: #f4f6f9; --gray-bd: #dde3ec;
       --text: #1a2333; --muted: #5a6a80; --white: #ffffff;
-      --red: #c0392b; --red-lt: #fdf0f0;
+      --red: #c0392b; --red-lt: #fdf0f0; --green: #1a7a4a; --green-lt: #e8f5ee;
     }
     body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--gray-bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
 
@@ -24,28 +24,29 @@
     .nav-left { display: flex; align-items: center; gap: .65rem; text-decoration: none; }
     .nav-mark { width: 34px; height: 34px; background: var(--orange); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.05rem; color: #fff; }
     .nav-name { color: #fff; font-weight: 700; font-size: 1.05rem; }
+    .nav-right { display: flex; align-items: center; gap: .5rem; }
+    .nav-link { color: #c8d8f0; font-size: .82rem; font-weight: 500; text-decoration: none; border: 1px solid rgba(255,255,255,.18); padding: .35rem .8rem; border-radius: 6px; transition: background .2s; }
+    .nav-link:hover { background: rgba(255,255,255,.1); color: #fff; }
 
-    .page { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; }
+    .page { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 2.5rem 1rem; }
 
-    .card { background: var(--white); border-radius: 14px; border: 1px solid var(--gray-bd); box-shadow: 0 4px 24px rgba(31,56,100,.1); padding: 2.25rem 2rem; width: 100%; max-width: 420px; }
+    .card { background: var(--white); border-radius: 14px; border: 1px solid var(--gray-bd); box-shadow: 0 4px 24px rgba(31,56,100,.1); padding: 2.25rem 2rem; width: 100%; max-width: 520px; }
 
-    .card-header { text-align: center; margin-bottom: 1.75rem; }
-    .card-header .icon { font-size: 2.2rem; margin-bottom: .5rem; }
+    .card-header { margin-bottom: 1.75rem; }
+    .card-header .icon { font-size: 2rem; margin-bottom: .5rem; }
     .card-header h1 { font-size: 1.35rem; font-weight: 800; color: var(--navy); }
-    .card-header p { font-size: .85rem; color: var(--muted); margin-top: .3rem; }
+    .card-header p { font-size: .85rem; color: var(--muted); margin-top: .3rem; line-height: 1.5; }
 
     .form-group { margin-bottom: 1.1rem; }
     label { display: block; font-size: .82rem; font-weight: 600; color: var(--navy); margin-bottom: .4rem; }
-    input[type="email"], input[type="password"] {
+    input[type="text"], input[type="email"], textarea {
       width: 100%; padding: .65rem .85rem; border: 1.5px solid var(--gray-bd);
       border-radius: 7px; font-size: .93rem; color: var(--text);
       font-family: inherit; outline: none; transition: border-color .2s;
       background: var(--white);
     }
-    input:focus { border-color: var(--navy); }
-    input.error { border-color: var(--red); }
-
-    .error-msg { font-size: .79rem; color: var(--red); margin-top: .3rem; }
+    input:focus, textarea:focus { border-color: var(--navy); }
+    textarea { resize: vertical; min-height: 120px; }
 
     .btn-submit {
       width: 100%; padding: .75rem; background: var(--navy); color: #fff;
@@ -55,26 +56,11 @@
     }
     .btn-submit:hover { background: var(--navy-md); }
 
-    .divider { text-align: center; font-size: .8rem; color: var(--muted); margin: 1.25rem 0; position: relative; }
-    .divider::before, .divider::after { content: ''; position: absolute; top: 50%; width: 38%; height: 1px; background: var(--gray-bd); }
-    .divider::before { left: 0; } .divider::after { right: 0; }
+    .flash { padding: .75rem 1rem; border-radius: 7px; font-size: .87rem; margin-bottom: 1.1rem; }
+    .flash.danger  { background: var(--red-lt);   border: 1px solid #f5c6c6; color: #7b1a1a; }
+    .flash.success { background: var(--green-lt); border: 1px solid #b3dfc7; color: #1a4a30; }
 
-    .link-btn {
-      display: block; text-align: center; padding: .65rem;
-      border: 1.5px solid var(--gray-bd); border-radius: 8px;
-      color: var(--navy); font-size: .9rem; font-weight: 600;
-      text-decoration: none; transition: background .15s, border-color .15s;
-    }
-    .link-btn:hover { background: var(--navy-lt); border-color: var(--navy); }
-
-    .flash { padding: .75rem 1rem; border-radius: 7px; font-size: .87rem; margin-bottom: 1rem; }
-    .flash.danger { background: var(--red-lt); border: 1px solid #f5c6c6; color: #7b1a1a; }
-    .flash.success { background: #e8f5ee; border: 1px solid #b3dfc7; color: #1a4a30; }
-
-    .demo-note { font-size: .78rem; color: var(--muted); text-align: center; margin-top: 1.1rem; line-height: 1.5; }
-    .demo-note a { color: var(--navy); font-weight: 600; }
-
-    footer { text-align: center; color: #9aafc4; font-size: .75rem; padding: 1rem 0; }
+    footer { text-align: center; color: #9aafc4; font-size: .75rem; padding: 1rem 0; border-top: 1px solid var(--gray-bd); margin-top: auto; }
   </style>
 </head>
 <body>
@@ -83,18 +69,27 @@
     <div class="nav-mark">P</div>
     <span class="nav-name">PerfCNC</span>
   </a>
-  <div style="display:flex;align-items:center;gap:.5rem;">
-    <a href="/contact" style="color:#c8d8f0;font-size:.82rem;font-weight:500;text-decoration:none;border:1px solid rgba(255,255,255,.18);padding:.35rem .8rem;border-radius:6px;">✉️ Contact</a>
-    <a href="/register" style="color:#c8d8f0;font-size:.82rem;font-weight:500;text-decoration:none;border:1px solid rgba(255,255,255,.18);padding:.35rem .8rem;border-radius:6px;">Créer un compte</a>
+  <div class="nav-right">
+    {% if current_user.is_authenticated %}
+      <span style="color:#b8c8e0;font-size:.82rem;">{{ current_user.email }}</span>
+      <a href="/historique" class="nav-link">📋 Historique</a>
+      <form method="POST" action="/logout" style="display:inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" style="background:transparent;border:1px solid rgba(255,255,255,.2);color:#c8d8f0;font-size:.82rem;padding:.3rem .75rem;border-radius:6px;cursor:pointer;font-family:inherit;">Déconnexion</button>
+      </form>
+    {% else %}
+      <a href="/login" class="nav-link">Connexion</a>
+      <a href="/register" class="nav-link">Créer un compte</a>
+    {% endif %}
   </div>
 </nav>
 
 <div class="page">
   <div class="card">
     <div class="card-header">
-      <div class="icon">🔐</div>
-      <h1>Connexion</h1>
-      <p>Accédez à votre historique d'analyses</p>
+      <div class="icon">✉️</div>
+      <h1>Nous contacter</h1>
+      <p>Une question, une suggestion ou un problème ? Remplissez ce formulaire et nous vous répondrons rapidement.</p>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -103,8 +98,14 @@
       {% endfor %}
     {% endwith %}
 
-    <form method="POST" action="/login" novalidate>
+    <form method="POST" action="/contact" novalidate>
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label for="name">Nom</label>
+        <input type="text" id="name" name="name" placeholder="Votre nom"
+               value="{{ name or '' }}" autocomplete="name" required>
+      </div>
 
       <div class="form-group">
         <label for="email">Adresse e-mail</label>
@@ -113,24 +114,18 @@
       </div>
 
       <div class="form-group">
-        <label for="password">Mot de passe</label>
-        <input type="password" id="password" name="password"
-               placeholder="••••••••" autocomplete="current-password" required>
+        <label for="message">Message</label>
+        <textarea id="message" name="message" rows="5"
+                  placeholder="Décrivez votre demande..." required>{{ message or '' }}</textarea>
       </div>
 
-      <button type="submit" class="btn-submit">Se connecter →</button>
+      <button type="submit" class="btn-submit">Envoyer le message →</button>
     </form>
-
-    <div class="divider">ou</div>
-    <a href="/register" class="link-btn">Créer un compte gratuit</a>
-
-    <p class="demo-note">
-      Pas de compte ? <a href="/">Essayez sans inscription</a> — 1 analyse gratuite sans sauvegarde.
-    </p>
   </div>
 </div>
 
-<footer>PerfCNC &copy; 2026</footer>
+<footer>PerfCNC &copy; 2026 — <a href="/cgu" style="color:#9aafc4;">CGU</a></footer>
+
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {

@@ -659,6 +659,14 @@ def _generate_demo_file():
     wb.save(_DEMO_PATH)
 
 
+# Génère le fichier démo au démarrage si absent
+if not os.path.exists(_DEMO_PATH):
+    try:
+        _generate_demo_file()
+    except Exception:
+        pass
+
+
 # ─────────────────────────────────────────────
 #  GÉNÉRATION PDF
 # ─────────────────────────────────────────────
@@ -1190,7 +1198,24 @@ def upload():
                 "danger",
             )
 
-    return render_template("dashboard.html", **data, filename=filename)
+    # ── Week comparison ──
+    week_compare = {}
+    if current_user.is_authenticated:
+        all_analyses = current_user.analyses.all()
+        merged = _merge_timelines(all_analyses)
+        current_timeline = data.get("trs_timeline", {})
+        for gran in ("jour", "semaine", "mois"):
+            for entry in current_timeline.get(gran, []):
+                p = entry.get("periode", "")
+                existing_list = merged.get(gran, [])
+                exists = next((e for e in existing_list if e.get("periode") == p), None)
+                if not exists:
+                    merged.setdefault(gran, []).append(entry)
+        week_compare = _week_comparison(merged)
+    else:
+        week_compare = _week_comparison(data.get("trs_timeline", {}))
+
+    return render_template("dashboard.html", **data, filename=filename, week_compare=week_compare)
 
 
 # ─────────────────────────────────────────────
@@ -1326,7 +1351,10 @@ def view_analysis(analysis_id):
     stats = analysis.stats
     stats["preview"]      = []
     stats["from_history"] = True
-    return render_template("dashboard.html", **stats, filename=analysis.filename)
+    all_analyses = current_user.analyses.all()
+    merged = _merge_timelines(all_analyses)
+    week_compare = _week_comparison(merged)
+    return render_template("dashboard.html", **stats, filename=analysis.filename, week_compare=week_compare)
 
 
 @app.route("/analyse/<int:analysis_id>/supprimer", methods=["POST"])
@@ -1359,8 +1387,68 @@ def _json_default(obj):
     raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
 
+@app.route("/demo")
+def demo():
+    session["cgu_accepted"] = True
+    session["demo_mode"] = True
+    try:
+        data = process_excel(_DEMO_PATH)
+    except Exception as e:
+        flash(f"Erreur lors du chargement de la démo : {e}", "danger")
+        return redirect(url_for("index"))
+
+    collect_anonymous_stats({
+        "total_saisies":  data["total_saisies"],
+        "moyenne_heures": data["moyenne_heures"],
+        "total_rebuts":   data["total_rebuts"],
+        "causes":         data["causes_dict"],
+        "familles":       data["famille_dict"],
+        "trs":            data["indicateurs"].get("trs"),
+    })
+
+    week_compare = _week_comparison(data.get("trs_timeline", {}))
+
+    return render_template(
+        "dashboard.html",
+        **data,
+        filename="demo_atelier.xlsx",
+        demo_mode=True,
+        week_compare=week_compare,
+    )
+
+
+@app.route("/contact", methods=["GET", "POST"])
+def contact():
+    if request.method == "POST":
+        name    = (request.form.get("name") or "").strip()
+        email   = (request.form.get("email") or "").strip()
+        message = (request.form.get("message") or "").strip()
+        if not name or not email or not message:
+            flash("Tous les champs sont obligatoires.", "danger")
+            return render_template("contact.html", name=name, email=email, message=message)
+        if "@" not in email:
+            flash("Adresse e-mail invalide.", "danger")
+            return render_template("contact.html", name=name, email=email, message=message)
+        try:
+            msg = MailMessage(
+                subject   = f"[PerfCNC Contact] {name}",
+                sender    = app.config["MAIL_USERNAME"] or CONTACT_EMAIL,
+                recipients=[CONTACT_EMAIL],
+                body      = f"De : {name} <{email}>\n\n{message}",
+                reply_to  = email,
+            )
+            mail.send(msg)
+            flash("Message envoyé avec succès ! Nous vous répondrons rapidement.", "success")
+            return redirect(url_for("contact"))
+        except Exception as e:
+            flash(f"Erreur lors de l'envoi : vérifiez la configuration MAIL. ({e})", "danger")
+    return render_template("contact.html")
+
+
 if __name__ == "__main__":
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     with app.app_context():
         db.create_all()
+    if not os.path.exists(_DEMO_PATH):
+        _generate_demo_file()
     app.run(debug=True, port=5000)
