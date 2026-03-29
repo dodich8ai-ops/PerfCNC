@@ -1,1698 +1,262 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="manifest" href="/static/manifest.json">
-  <meta name="theme-color" content="#1F3864">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="PerfCNC">
-  <title>PerfCNC – Dashboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --navy:      #1F3864;
-      --navy-md:   #2c4f8c;
-      --navy-lt:   #e8eef8;
-      --orange:    #ED7D31;
-      --orange-lt: #fdf0e8;
-      --orange-dk: #c96520;
-      --gray-bg:   #f4f6f9;
-      --gray-bd:   #dde3ec;
-      --text:      #1a2333;
-      --muted:     #5a6a80;
-      --white:     #ffffff;
-      --green:     #1a7a4a;
-      --green-lt:  #e8f5ee;
-      --red:       #c0392b;
-      --red-lt:    #fdf0f0;
-    }
-
-    body {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      background: var(--gray-bg);
-      color: var(--text);
-      min-height: 100vh;
-    }
-
-    /* ── TOPBAR ── */
-    nav {
-      background: var(--navy);
-      height: 58px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 1.75rem;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      box-shadow: 0 2px 12px rgba(0,0,0,.25);
-    }
-
-    .nav-left {
-      display: flex;
-      align-items: center;
-      gap: .65rem;
-      text-decoration: none;
-    }
-
-    .nav-mark {
-      width: 34px; height: 34px;
-      background: var(--orange);
-      border-radius: 7px;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: 1.05rem; color: #fff;
-    }
-
-    .nav-name { color: #fff; font-weight: 700; font-size: 1.05rem; }
-
-    .nav-right { display: flex; align-items: center; gap: .85rem; }
-
-    .nav-file {
-      font-size: .76rem;
-      background: rgba(255,255,255,.12);
-      color: #c8d8f0;
-      padding: .25rem .7rem;
-      border-radius: 20px;
-      max-width: 200px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .btn-back {
-      display: inline-flex;
-      align-items: center;
-      gap: .35rem;
-      padding: .38rem .85rem;
-      background: var(--orange);
-      color: #fff;
-      border-radius: 6px;
-      font-size: .82rem;
-      font-weight: 600;
-      text-decoration: none;
-      transition: background .2s;
-    }
-    .btn-back:hover { background: var(--orange-dk); }
-
-    .nav-link {
-      display: inline-flex;
-      align-items: center;
-      gap: .35rem;
-      padding: .38rem .85rem;
-      color: #c8d8f0;
-      border: 1px solid rgba(255,255,255,.18);
-      border-radius: 6px;
-      font-size: .82rem;
-      font-weight: 500;
-      text-decoration: none;
-      transition: background .2s, color .2s;
-    }
-    .nav-link:hover { background: rgba(255,255,255,.1); color: #fff; }
-
-    /* ── INDICATEURS DE PERFORMANCE ── */
-    .perf-row {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1rem;
-      margin-bottom: 1.75rem;
-    }
-    @media (max-width: 700px) { .perf-row { grid-template-columns: 1fr; } }
-
-    .perf-card {
-      background: var(--white);
-      border-radius: 10px;
-      border: 1px solid var(--gray-bd);
-      padding: 1.25rem 1.5rem;
-      box-shadow: 0 1px 6px rgba(31,56,100,.06);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .perf-card::before {
-      content: '';
-      position: absolute;
-      left: 0; top: 0; bottom: 0;
-      width: 4px;
-      border-radius: 10px 0 0 10px;
-    }
-    .perf-card.trs::before        { background: var(--navy); }
-    .perf-card.dispo::before      { background: #2980b9; }
-    .perf-card.qualite::before    { background: var(--green); }
-
-    .perf-label {
-      font-size: .72rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      color: var(--muted);
-      margin-bottom: .4rem;
-    }
-
-    .perf-value {
-      font-size: 2.1rem;
-      font-weight: 800;
-      line-height: 1;
-      margin-bottom: .3rem;
-    }
-    .perf-card.trs     .perf-value { color: var(--navy); }
-    .perf-card.dispo   .perf-value { color: #2980b9; }
-    .perf-card.qualite .perf-value { color: var(--green); }
-
-    .perf-unit { font-size: 1.1rem; font-weight: 600; }
-
-    .perf-sub {
-      font-size: .78rem;
-      color: var(--muted);
-      line-height: 1.4;
-    }
-
-    .perf-bar-track {
-      height: 5px;
-      background: var(--gray-bd);
-      border-radius: 3px;
-      margin-top: .75rem;
-      overflow: hidden;
-    }
-    .perf-bar-fill {
-      height: 100%;
-      border-radius: 3px;
-      transition: width .6s ease;
-    }
-    .perf-card.trs     .perf-bar-fill { background: var(--navy); }
-    .perf-card.dispo   .perf-bar-fill { background: #2980b9; }
-    .perf-card.qualite .perf-bar-fill { background: var(--green); }
-
-    .perf-nd {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: #aab8cc;
-    }
-    .perf-nd-sub {
-      font-size: .76rem;
-      color: #aab8cc;
-      margin-top: .2rem;
-    }
-
-    /* ── LAYOUT ── */
-    main { max-width: 1280px; margin: 0 auto; padding: 1.75rem; }
-
-    .section-label {
-      font-size: .7rem;
-      font-weight: 700;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: .1em;
-      margin-bottom: .85rem;
-      display: flex;
-      align-items: center;
-      gap: .6rem;
-    }
-    .section-label::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--gray-bd);
-    }
-
-    /* ── KPI CARDS ── */
-    .kpi-row {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1rem;
-      margin-bottom: 1.75rem;
-    }
-
-    @media (max-width: 700px) { .kpi-row { grid-template-columns: 1fr; } }
-
-    .kpi-card {
-      background: var(--white);
-      border-radius: 10px;
-      border: 1px solid var(--gray-bd);
-      padding: 1.4rem 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      box-shadow: 0 1px 6px rgba(31,56,100,.06);
-    }
-
-    .kpi-icon {
-      width: 48px; height: 48px;
-      border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.4rem;
-      flex-shrink: 0;
-    }
-    .kpi-icon.blue   { background: var(--navy-lt); }
-    .kpi-icon.orange { background: var(--orange-lt); }
-    .kpi-icon.red    { background: var(--red-lt); }
-
-    .kpi-body {}
-    .kpi-val {
-      font-size: 1.9rem;
-      font-weight: 800;
-      line-height: 1;
-    }
-    .kpi-val.blue   { color: var(--navy); }
-    .kpi-val.orange { color: var(--orange); }
-    .kpi-val.red    { color: var(--red); }
-
-    .kpi-lbl {
-      font-size: .78rem;
-      color: var(--muted);
-      margin-top: .25rem;
-      font-weight: 500;
-    }
-
-    /* ── PANEL GRID ── */
-    .panels {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.25rem;
-      margin-bottom: 1.75rem;
-    }
-
-    @media (max-width: 860px) { .panels { grid-template-columns: 1fr; } }
-
-    .panel {
-      background: var(--white);
-      border-radius: 10px;
-      border: 1px solid var(--gray-bd);
-      padding: 1.5rem;
-      box-shadow: 0 1px 6px rgba(31,56,100,.06);
-    }
-
-    .panel-title {
-      font-size: .9rem;
-      font-weight: 700;
-      color: var(--navy);
-      margin-bottom: 1.25rem;
-      display: flex;
-      align-items: center;
-      gap: .45rem;
-    }
-    .panel-title .accent { color: var(--orange); }
-
-    .chart-box { position: relative; height: 280px; }
-
-    /* ── TABLE ── */
-    .table-scroll { overflow-x: auto; border-radius: 8px; border: 1px solid var(--gray-bd); }
-
-    table { width: 100%; border-collapse: collapse; font-size: .87rem; }
-
-    thead th {
-      background: var(--navy);
-      color: #c8d8f0;
-      padding: .65rem 1rem;
-      text-align: left;
-      font-size: .72rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      white-space: nowrap;
-    }
-
-    tbody td {
-      padding: .6rem 1rem;
-      border-bottom: 1px solid var(--gray-bd);
-      color: var(--text);
-    }
-    tbody tr:last-child td { border-bottom: none; }
-    tbody tr:hover { background: var(--navy-lt); }
-    tbody tr:nth-child(even) { background: #f8fafc; }
-    tbody tr:nth-child(even):hover { background: var(--navy-lt); }
-
-    td.num { text-align: right; font-variant-numeric: tabular-nums; }
-
-    .tag-famille {
-      display: inline-block;
-      background: var(--navy-lt);
-      color: var(--navy);
-      font-size: .76rem;
-      font-weight: 600;
-      padding: .2rem .6rem;
-      border-radius: 4px;
-    }
-
-    /* ── IA INSIGHTS ── */
-    .insights-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1.1rem;
-      margin-bottom: 1.75rem;
-    }
-
-    @media (max-width: 780px) { .insights-grid { grid-template-columns: 1fr; } }
-
-    .insight-card {
-      border-radius: 10px;
-      border: 1px solid;
-      padding: 1.25rem 1.35rem;
-      display: flex;
-      flex-direction: column;
-      gap: .55rem;
-      box-shadow: 0 1px 6px rgba(0,0,0,.06);
-    }
-
-    .insight-card.probleme {
-      background: var(--red-lt);
-      border-color: #f5c6c6;
-    }
-    .insight-card.tendance {
-      background: var(--orange-lt);
-      border-color: #f8d5b3;
-    }
-    .insight-card.recommandation {
-      background: var(--green-lt);
-      border-color: #b3dfc7;
-    }
-
-    .insight-header {
-      display: flex;
-      align-items: center;
-      gap: .5rem;
-      font-size: .72rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-    }
-    .insight-card.probleme      .insight-header { color: var(--red); }
-    .insight-card.tendance      .insight-header { color: var(--orange-dk); }
-    .insight-card.recommandation .insight-header { color: var(--green); }
-
-    .insight-icon { font-size: 1.2rem; }
-
-    .insight-text {
-      font-size: .9rem;
-      line-height: 1.55;
-      color: var(--text);
-    }
-
-    .ia-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: .35rem;
-      font-size: .72rem;
-      background: var(--navy-lt);
-      color: var(--navy);
-      border: 1px solid #c8d8f0;
-      padding: .2rem .6rem;
-      border-radius: 20px;
-      font-weight: 600;
-      margin-bottom: .5rem;
-    }
-
-    /* ── PREVIEW ── */
-    .preview-header {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin-bottom: .75rem;
-    }
-
-    .toggle-btn {
-      background: none;
-      border: 1px solid var(--gray-bd);
-      border-radius: 6px;
-      padding: .35rem .8rem;
-      font-size: .82rem;
-      cursor: pointer;
-      color: var(--navy);
-      font-weight: 500;
-      transition: background .15s, border-color .15s;
-    }
-    .toggle-btn:hover { background: var(--navy-lt); border-color: var(--navy); }
-
-    #preview-table { display: none; }
-
-    /* ── TRS ALERT BANNER ── */
-    .trs-alert {
-      display: flex;
-      align-items: center;
-      gap: .75rem;
-      border-radius: 9px;
-      padding: .8rem 1.1rem;
-      margin-bottom: 1rem;
-      font-size: .87rem;
-      font-weight: 500;
-    }
-    .trs-alert-icon { font-size: 1.1rem; flex-shrink: 0; }
-    .trs-alert-badge {
-      margin-left: auto;
-      font-size: .82rem;
-      font-weight: 700;
-      padding: .2rem .65rem;
-      border-radius: 20px;
-      white-space: nowrap;
-    }
-    .trs-alert.rouge  { background: var(--red-lt);  border: 1px solid #f5c6c6; color: #7b1a1a; }
-    .trs-alert.orange { background: #fff8e6;         border: 1px solid #fcd34d; color: #7c4a00; }
-    .trs-alert.vert   { background: var(--green-lt); border: 1px solid #b3dfc7; color: #1a4a30; }
-    .trs-alert.rouge  .trs-alert-badge { background: #f5c6c6; color: var(--red); }
-    .trs-alert.orange .trs-alert-badge { background: #fcd34d; color: #7c4a00; }
-    .trs-alert.vert   .trs-alert-badge { background: #b3dfc7; color: var(--green); }
-
-    /* ── USER GREETING ── */
-    .user-bar {
-      display: flex;
-      align-items: center;
-      gap: .75rem;
-      background: var(--white);
-      border: 1px solid var(--gray-bd);
-      border-radius: 10px;
-      padding: .7rem 1.25rem;
-      margin-bottom: 1rem;
-      font-size: .85rem;
-      box-shadow: 0 1px 6px rgba(31,56,100,.06);
-    }
-    .user-bar .u-greet { color: var(--muted); }
-    .user-bar .u-email { font-weight: 700; color: var(--navy); }
-    .plan-badge {
-      font-size: .72rem; font-weight: 700;
-      padding: .2rem .55rem; border-radius: 20px;
-    }
-    .plan-free { background: var(--navy-lt); color: var(--navy); }
-    .plan-pro  { background: #fef3c7; color: #b45309; }
-    .u-quota   { font-size: .78rem; color: var(--muted); }
-    .u-quota strong { color: var(--navy); }
-
-    /* ── TIMELINE SECTION ── */
-    .timeline-toolbar {
-      display: flex;
-      align-items: center;
-      gap: .75rem;
-      flex-wrap: wrap;
-      margin-bottom: 1rem;
-    }
-    .tab-group { display: flex; gap: .35rem; }
-    .tab-btn {
-      padding: .38rem .9rem;
-      border: 1px solid var(--gray-bd);
-      background: var(--white);
-      border-radius: 6px;
-      font-size: .82rem;
-      font-weight: 600;
-      color: var(--muted);
-      cursor: pointer;
-      transition: background .15s, color .15s, border-color .15s;
-    }
-    .tab-btn:hover  { background: var(--navy-lt); color: var(--navy); border-color: var(--navy); }
-    .tab-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); }
-    .group-select {
-      padding: .38rem .7rem;
-      border: 1px solid var(--gray-bd);
-      border-radius: 6px;
-      font-size: .82rem;
-      color: var(--text);
-      background: var(--white);
-      cursor: pointer;
-      outline: none;
-      transition: border-color .15s;
-    }
-    .group-select:focus { border-color: var(--navy); }
-    .trs-note {
-      font-size: .78rem;
-      color: #b45309;
-      background: #fff8e6;
-      border: 1px solid #fcd34d;
-      border-radius: 6px;
-      padding: .3rem .75rem;
-      margin-left: auto;
-    }
-    /* coloured TRS cells in table */
-    .tc-good { color: var(--green); font-weight: 700; }
-    .tc-ok   { color: #b45309;     font-weight: 700; }
-    .tc-bad  { color: var(--red);  font-weight: 700; }
-    .tc-nd   { color: #aab8cc; }
-
-    /* ── SAMPLE BANNER ── */
-    .sample-banner {
-      display: flex;
-      align-items: center;
-      gap: .75rem;
-      background: #fffbeb;
-      border: 1px solid #fcd34d;
-      border-radius: 9px;
-      padding: .75rem 1.1rem;
-      margin-bottom: 1rem;
-      font-size: .87rem;
-      color: #92400e;
-    }
-    .sample-banner .s-icon { font-size: 1.1rem; flex-shrink: 0; }
-    .sample-banner strong { font-weight: 700; }
-
-    /* ── PDF BUTTON ── */
-    .pdf-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: var(--white);
-      border: 1px solid var(--gray-bd);
-      border-radius: 10px;
-      padding: .9rem 1.25rem;
-      margin-bottom: 1.75rem;
-      box-shadow: 0 1px 6px rgba(31,56,100,.06);
-    }
-
-    .pdf-bar-text {
-      font-size: .88rem;
-      color: var(--muted);
-    }
-    .pdf-bar-text strong { color: var(--navy); }
-
-    .btn-pdf {
-      display: inline-flex;
-      align-items: center;
-      gap: .5rem;
-      padding: .6rem 1.3rem;
-      background: var(--navy);
-      color: #fff;
-      border: none;
-      border-radius: 7px;
-      font-size: .9rem;
-      font-weight: 700;
-      cursor: pointer;
-      text-decoration: none;
-      transition: background .2s, transform .1s;
-      flex-shrink: 0;
-    }
-    .btn-pdf:hover {
-      background: var(--navy-md);
-      transform: translateY(-1px);
-    }
-
-    /* ── MODAL ── */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(15,25,50,.55);
-      z-index: 500;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-    }
-
-    .modal-overlay.open { display: flex; }
-
-    .modal-box {
-      background: var(--white);
-      border-radius: 12px;
-      box-shadow: 0 8px 40px rgba(15,25,50,.25);
-      max-width: 540px;
-      width: 100%;
-      overflow: hidden;
-      animation: modal-in .18s ease;
-    }
-
-    @keyframes modal-in {
-      from { transform: translateY(12px); opacity: 0; }
-      to   { transform: translateY(0);    opacity: 1; }
-    }
-
-    .modal-head {
-      background: var(--navy);
-      padding: 1rem 1.25rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .modal-head h3 {
-      color: #fff;
-      font-size: .95rem;
-      font-weight: 700;
-    }
-
-    .modal-close {
-      background: rgba(255,255,255,.15);
-      border: none;
-      color: #fff;
-      font-size: 1rem;
-      width: 28px; height: 28px;
-      border-radius: 50%;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      transition: background .15s;
-    }
-    .modal-close:hover { background: rgba(255,255,255,.3); }
-
-    .modal-body {
-      padding: 1.25rem 1.4rem;
-    }
-
-    .modal-section {
-      margin-bottom: 1rem;
-    }
-
-    .modal-section:last-child { margin-bottom: 0; }
-
-    .modal-section-label {
-      font-size: .65rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .1em;
-      color: var(--muted);
-      margin-bottom: .4rem;
-    }
-
-    .modal-formula {
-      background: var(--navy);
-      border-radius: 7px;
-      padding: .75rem 1rem;
-      font-family: 'Courier New', monospace;
-      font-size: .9rem;
-      color: #e8f0fb;
-      line-height: 1.6;
-    }
-
-    .modal-formula .hl { color: var(--orange); font-weight: 700; }
-
-    .modal-text {
-      font-size: .9rem;
-      color: var(--text);
-      line-height: 1.65;
-    }
-
-    .modal-text .val {
-      font-weight: 700;
-      color: var(--navy);
-    }
-
-    .modal-ref-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: .4rem;
-      margin-top: .5rem;
-    }
-
-    .modal-ref-badge {
-      font-size: .75rem;
-      font-weight: 600;
-      padding: .22rem .6rem;
-      border-radius: 5px;
-    }
-
-    .mref-bad  { background: var(--red-lt);   color: var(--red);   border: 1px solid #f5c6c6; }
-    .mref-ok   { background: #fff8e6;          color: #b45309;      border: 1px solid #fcd34d; }
-    .mref-good { background: var(--navy-lt);   color: var(--navy);  border: 1px solid #c8d8f0; }
-    .mref-exc  { background: var(--green-lt);  color: var(--green); border: 1px solid #b3dfc7; }
-
-    /* "?" info button */
-    .info-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 20px; height: 20px;
-      border-radius: 50%;
-      background: var(--navy-lt);
-      color: var(--navy);
-      border: 1px solid #c8d8f0;
-      font-size: .72rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background .15s;
-      flex-shrink: 0;
-      margin-left: auto;
-    }
-    .info-btn:hover { background: var(--navy); color: #fff; }
-
-    /* ── FOOTER ── */
-    footer {
-      text-align: center;
-      color: #9aafc4;
-      font-size: .75rem;
-      padding: 1.75rem 0 1rem;
-      border-top: 1px solid var(--gray-bd);
-      margin-top: .5rem;
-    }
-
-    /* ── DEMO BANNER ── */
-    .demo-banner {
-      background: #fdf0e8;
-      border: 1px solid #f8d5b3;
-      padding: .65rem 1.1rem;
-      border-radius: 8px;
-      font-size: .85rem;
-      color: #7a3a00;
-      margin-bottom: 1rem;
-    }
-    .demo-banner a { color: #c96520; font-weight: 600; text-decoration: none; }
-    .demo-banner a:hover { text-decoration: underline; }
-
-    /* ── WEEK COMPARISON ── */
-    .wk-section { margin-bottom: 1.5rem; }
-    .wk-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
-    @media (max-width: 600px) { .wk-cards { grid-template-columns: 1fr; } }
-    .wk-card { background: var(--white); border: 1px solid var(--gray-bd); border-radius: 12px; padding: 1.1rem 1.25rem; }
-    .wk-card-title { font-size: .78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .75rem; }
-    .wk-kpi-row { display: flex; flex-direction: column; gap: .5rem; }
-    .wk-kpi { display: flex; justify-content: space-between; align-items: center; font-size: .88rem; }
-    .wk-kpi-lbl { color: var(--muted); }
-    .wk-kpi-val { font-weight: 700; color: var(--navy); }
-    .wk-delta { font-size: .82rem; font-weight: 700; margin-left: .4rem; }
-    .wk-delta.up { color: #1a7a4a; }
-    .wk-delta.down { color: #c0392b; }
-    .wk-delta.eq { color: var(--muted); }
-    .wk-no-data { font-size: .85rem; color: var(--muted); padding: .75rem 0; text-align: center; margin-bottom: 1.5rem; }
-  </style>
-</head>
-<body>
-
-<!-- NAV -->
-<nav>
-  <a href="/" class="nav-left">
-    <div class="nav-mark">P</div>
-    <span class="nav-name">PerfCNC</span>
-  </a>
-  <div class="nav-right">
-    <span class="nav-file" title="{{ filename }}">📄 {{ filename }}</span>
-    <a href="/comment-ca-marche" class="nav-link">❓ Comment ça marche</a>
-    <a href="/exercices" class="nav-link">🧮 Exercices</a>
-    <a href="/glossaire" class="nav-link">📖 Glossaire</a>
-    <a href="/cgu" class="nav-link">⚖️ CGU</a>
-    <a href="/contact" class="nav-link">✉️ Contact</a>
-    <a href="/" class="btn-back">← Nouvel import</a>
-  </div>
-</nav>
-
-<main>
-
-  <!-- ── BANDEAU ÉCHANTILLON ── -->
-  {% if sampled %}
-  <div class="sample-banner">
-    <span class="s-icon">⚡</span>
-    <span>
-      <strong>Fichier volumineux — analyse sur échantillon représentatif.</strong>
-      Votre fichier contient {{ original_size }} lignes. PerfCNC a sélectionné
-      {{ total_saisies }} lignes aléatoires pour garantir des performances optimales
-      et maîtriser les coûts IA.
-    </span>
-  </div>
-  {% endif %}
-
-  <!-- ── ALERTE TRS ── -->
-  {% if trs_alerte %}
-  <div class="trs-alert {{ trs_alerte.niveau }}">
-    <span class="trs-alert-icon">
-      {%- if trs_alerte.niveau == 'rouge' %}🔴{%- elif trs_alerte.niveau == 'orange' %}🟠{%- else %}🟢{%- endif %}
-    </span>
-    <span>{{ trs_alerte.message }}</span>
-    <span class="trs-alert-badge">TRS {{ trs_alerte.trs }} %</span>
-  </div>
-  {% endif %}
-
-  <!-- ── BARRE UTILISATEUR ── -->
-  {% if current_user is defined and current_user.is_authenticated %}
-  <div class="user-bar">
-    <span class="u-greet">Bonjour,</span>
-    <span class="u-email">{{ current_user.email }}</span>
-    <span class="plan-badge {% if current_user.plan == 'pro' %}plan-pro{% else %}plan-free{% endif %}">
-      {{ current_user.display_plan }}
-    </span>
-    {% if current_user.plan != 'pro' %}
-    <span class="u-quota">
-      <strong>{{ current_user.analyses_count }}/5</strong> analyses sauvegardées
-    </span>
-    {% endif %}
-    <a href="/historique" style="margin-left:auto;font-size:.82rem;color:var(--navy);font-weight:600;text-decoration:none;">📂 Historique →</a>
-  </div>
-  {% endif %}
-
-  <!-- ── BARRE PDF ── -->
-  <div class="pdf-bar">
-    <span class="pdf-bar-text">
-      <strong>{{ filename }}</strong> — {{ total_saisies }} saisies analysées
-    </span>
-    <button class="btn-pdf" onclick="document.getElementById('pdf-form').submit()">
-      📄 Télécharger le rapport PDF
-    </button>
-  </div>
-
-  {# Formulaire caché — toutes les données pour la génération PDF #}
-  <form id="pdf-form" action="/download-pdf" method="post" style="display:none;">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input type="hidden" name="filename"       value="{{ filename }}">
-    <input type="hidden" name="total_saisies"  value="{{ total_saisies }}">
-    <input type="hidden" name="moyenne_heures" value="{{ moyenne_heures }}">
-    <input type="hidden" name="total_rebuts"   value="{{ total_rebuts }}">
-    <input type="hidden" name="indicateurs"    value="{{ indicateurs | tojson | forceescape }}">
-    <input type="hidden" name="causes_labels"  value="{{ causes_labels | e }}">
-    <input type="hidden" name="causes_values"  value="{{ causes_values | e }}">
-    <input type="hidden" name="famille_table"  value="{{ famille_table | tojson | forceescape }}">
-    <input type="hidden" name="insights"       value="{{ insights | tojson | forceescape }}">
-    <input type="hidden" name="trs_timeline"  value="{{ trs_timeline | tojson | forceescape }}">
-    <input type="hidden" name="week_compare"  value="{{ week_compare | default({}) | tojson | forceescape }}">
-  </form>
-
-  {% if demo_mode %}
-  <div class="demo-banner">
-    Mode démo — vos données sont utilisées anonymement pour améliorer PerfCNC.
-    <a href="/register">Inscrivez-vous</a> pour garder vos données privées.
-  </div>
-  {% endif %}
-
-  <!-- ── Semaine vs semaine dernière ── -->
-  <div class="section-label">Cette semaine vs semaine dernière</div>
-  {% set tw = week_compare.get('this_week') if week_compare else None %}
-  {% set lw = week_compare.get('last_week') if week_compare else None %}
-  {% if tw and lw %}
-  <div class="wk-cards">
-    <div class="wk-card">
-      <div class="wk-card-title">{{ week_compare.this_week_label }}</div>
-      <div class="wk-kpi-row">
-        {% set trs_val = tw.trs %}
-        {% set trs_lw = lw.trs %}
-        <div class="wk-kpi">
-          <span class="wk-kpi-lbl">TRS</span>
-          <span class="wk-kpi-val">{{ "%.1f"|format(trs_val) if trs_val is not none else "—" }}%
-            {% if trs_val is not none and trs_lw is not none %}
-              {% set delta = trs_val - trs_lw %}
-              {% if delta > 0.1 %}<span class="wk-delta up">↑ +{{ "%.1f"|format(delta) }}pts</span>
-              {% elif delta < -0.1 %}<span class="wk-delta down">↓ {{ "%.1f"|format(delta) }}pts</span>
-              {% else %}<span class="wk-delta eq">= stable</span>{% endif %}
-            {% endif %}
+{% extends "base.html" %}
+{% block title %}Tableau de bord — WatchFolio{% endblock %}
+
+{% block extra_head %}
+<style>
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  /* KPI grid */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .kpi-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+  }
+
+  .kpi-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .kpi-value {
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1.1;
+  }
+
+  .kpi-sub {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 0.3rem;
+  }
+
+  /* Section */
+  .section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--gold);
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Brand bars */
+  .brand-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+  .brand-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .brand-name {
+    min-width: 160px;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .brand-bar-wrap {
+    flex: 1;
+    height: 6px;
+    background: var(--bg3);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .brand-bar {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 6px;
+    transition: width 0.4s ease;
+  }
+
+  .brand-count {
+    min-width: 24px;
+    text-align: right;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  /* Two-col layout */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1.6fr;
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--muted);
+  }
+
+  .empty-state h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--text);
+  }
+
+  .empty-state p {
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 900px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .two-col  { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 480px) {
+    .kpi-grid { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Tableau de bord</h1>
+  <a href="{{ url_for('ajouter') }}" class="btn btn-gold">+ Ajouter une montre</a>
+</div>
+
+{% if watches %}
+  <!-- KPI cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Valeur totale</div>
+      <div class="kpi-value text-gold">{{ valeur_totale | money }}</div>
+      <div class="kpi-sub">{{ watches | length }} montre{% if watches | length > 1 %}s{% endif %} en collection</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-label">Plus-value totale</div>
+      <div class="kpi-value {{ 'text-green' if plus_value_totale >= 0 else 'text-red' }}">
+        {{ '+' if plus_value_totale >= 0 else '' }}{{ plus_value_totale | money }}
+      </div>
+      <div class="kpi-sub">Coût d'acquisition : {{ cout_total | money }}</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-label">Meilleure performance</div>
+      {% if meilleure %}
+        <div class="kpi-value text-green" style="font-size:1.2rem;">{{ meilleure.marque }}</div>
+        <div class="kpi-sub">
+          {{ meilleure.reference }}
+          &nbsp;
+          <span class="text-green">+{{ "%.1f" | format(meilleure.plus_value_pct) }}%</span>
+        </div>
+      {% else %}
+        <div class="kpi-value text-muted" style="font-size:1rem;">—</div>
+      {% endif %}
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-label">Pire performance</div>
+      {% if pire %}
+        <div class="kpi-value text-red" style="font-size:1.2rem;">{{ pire.marque }}</div>
+        <div class="kpi-sub">
+          {{ pire.reference }}
+          &nbsp;
+          <span class="{{ 'text-red' if pire.plus_value_pct < 0 else 'text-green' }}">
+            {{ '+' if pire.plus_value_pct >= 0 else '' }}{{ "%.1f" | format(pire.plus_value_pct) }}%
           </span>
         </div>
-        <div class="wk-kpi">
-          <span class="wk-kpi-lbl">Rebuts</span>
-          <span class="wk-kpi-val">{{ tw.total_rebuts if tw.total_rebuts is defined else "—" }}</span>
-        </div>
-        <div class="wk-kpi">
-          <span class="wk-kpi-lbl">Heures produites</span>
-          <span class="wk-kpi-val">{{ "%.1f"|format(tw.total_heures) if tw.total_heures is defined else "—" }}h</span>
-        </div>
-      </div>
-    </div>
-    <div class="wk-card">
-      <div class="wk-card-title">{{ week_compare.last_week_label }}</div>
-      <div class="wk-kpi-row">
-        <div class="wk-kpi">
-          <span class="wk-kpi-lbl">TRS</span>
-          <span class="wk-kpi-val">{{ "%.1f"|format(lw.trs) if lw.trs is not none else "—" }}%</span>
-        </div>
-        <div class="wk-kpi">
-          <span class="wk-kpi-lbl">Rebuts</span>
-          <span class="wk-kpi-val">{{ lw.total_rebuts if lw.total_rebuts is defined else "—" }}</span>
-        </div>
-        <div class="wk-kpi">
-          <span class="wk-kpi-lbl">Heures produites</span>
-          <span class="wk-kpi-val">{{ "%.1f"|format(lw.total_heures) if lw.total_heures is defined else "—" }}h</span>
-        </div>
-      </div>
-    </div>
-  </div>
-  {% else %}
-  <div class="wk-no-data">Importez au moins 2 semaines de données pour voir la comparaison.</div>
-  {% endif %}
-
-  <!-- ── KPIs ── -->
-  <div class="section-label">Indicateurs clés</div>
-  <div class="kpi-row">
-    <div class="kpi-card">
-      <div class="kpi-icon blue">📋</div>
-      <div class="kpi-body">
-        <div class="kpi-val blue">{{ total_saisies }}</div>
-        <div class="kpi-lbl">Total saisies</div>
-      </div>
-      <button class="info-btn" onclick="openModal('modal-saisies')" title="Comment c'est calculé ?">?</button>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-icon orange">⏱️</div>
-      <div class="kpi-body">
-        <div class="kpi-val orange">{{ moyenne_heures }}</div>
-        <div class="kpi-lbl">Heures produites (moy.)</div>
-      </div>
-      <button class="info-btn" onclick="openModal('modal-heures')" title="Comment c'est calculé ?">?</button>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-icon red">⚠️</div>
-      <div class="kpi-body">
-        <div class="kpi-val red">{{ total_rebuts }}</div>
-        <div class="kpi-lbl">Total pièces KO (rebuts)</div>
-      </div>
-      <button class="info-btn" onclick="openModal('modal-rebuts')" title="Comment c'est calculé ?">?</button>
-    </div>
-  </div>
-
-  <!-- ── INDICATEURS DE PERFORMANCE ── -->
-  <div class="section-label">
-    Indicateurs de performance
-    <a href="/glossaire" style="font-size:.72rem;color:var(--orange);font-weight:600;text-decoration:none;letter-spacing:.02em;">ℹ Définitions →</a>
-  </div>
-  <div class="perf-row">
-
-    {# TRS #}
-    <div class="perf-card trs">
-      <div style="display:flex;align-items:center;margin-bottom:.4rem;">
-        <div class="perf-label" style="margin-bottom:0;flex:1;">TRS — Taux de Rendement Synthétique</div>
-        <button class="info-btn" onclick="openModal('modal-trs')" title="Comment c'est calculé ?">?</button>
-      </div>
-      {% if indicateurs.trs is not none %}
-        <div class="perf-value">{{ indicateurs.trs }}<span class="perf-unit"> %</span></div>
-        <div class="perf-sub">
-          Base : {{ indicateurs.heures_poste }}h/poste ·
-          {{ indicateurs.heures_ouverture_theoriques }}h théoriques
-        </div>
-        <div class="perf-bar-track">
-          <div class="perf-bar-fill" style="width:{{ [indicateurs.trs, 100] | min }}%"></div>
-        </div>
       {% else %}
-        <div class="perf-nd">N/D</div>
-        <div class="perf-nd-sub">Données insuffisantes</div>
+        <div class="kpi-value text-muted" style="font-size:1rem;">—</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="two-col">
+    <!-- Brand distribution -->
+    <div class="card">
+      <div class="section-title">Distribution par marque</div>
+      {% if marques %}
+        {% set max_count = marques[0][1] %}
+        <div class="brand-list">
+          {% for marque, count in marques %}
+            <div class="brand-row">
+              <span class="brand-name">{{ marque }}</span>
+              <div class="brand-bar-wrap">
+                <div class="brand-bar" style="width: {{ (count / max_count * 100) | round }}%"></div>
+              </div>
+              <span class="brand-count">{{ count }}</span>
+            </div>
+          {% endfor %}
+        </div>
       {% endif %}
     </div>
 
-    {# Disponibilité #}
-    <div class="perf-card dispo">
-      <div style="display:flex;align-items:center;margin-bottom:.4rem;">
-        <div class="perf-label" style="margin-bottom:0;flex:1;">Disponibilité machine</div>
-        <button class="info-btn" onclick="openModal('modal-dispo')" title="Comment c'est calculé ?">?</button>
-      </div>
-      {% if indicateurs.disponibilite is not none %}
-        <div class="perf-value">{{ indicateurs.disponibilite }}<span class="perf-unit"> %</span></div>
-        <div class="perf-sub">
-          {{ total_heures_produites }} h produites / {{ indicateurs.heures_ouverture_theoriques }} h ouverture
-        </div>
-        <div class="perf-bar-track">
-          <div class="perf-bar-fill" style="width:{{ [indicateurs.disponibilite, 100] | min }}%"></div>
-        </div>
-      {% else %}
-        <div class="perf-nd">N/D</div>
-        <div class="perf-nd-sub">Données insuffisantes</div>
-      {% endif %}
-    </div>
-
-    {# Taux qualité #}
-    <div class="perf-card qualite">
-      <div style="display:flex;align-items:center;margin-bottom:.4rem;">
-        <div class="perf-label" style="margin-bottom:0;flex:1;">Taux qualité</div>
-        <button class="info-btn" onclick="openModal('modal-qualite')" title="Comment c'est calculé ?">?</button>
-      </div>
-      {% if indicateurs.taux_qualite is not none %}
-        <div class="perf-value">{{ indicateurs.taux_qualite }}<span class="perf-unit"> %</span></div>
-        <div class="perf-sub">
-          (Total pièces − Pièces KO) / Total pièces
-        </div>
-        <div class="perf-bar-track">
-          <div class="perf-bar-fill" style="width:{{ [indicateurs.taux_qualite, 100] | min }}%"></div>
-        </div>
-      {% else %}
-        <div class="perf-nd">N/D</div>
-        <div class="perf-nd-sub">Colonne « Total pièces » absente du fichier</div>
-      {% endif %}
-    </div>
-
-  </div>
-
-  <!-- ── ÉVOLUTION DU TRS ── -->
-  <div class="section-label">
-    Évolution du TRS
-    {% if not trs_timeline.has_cadence %}
-    <span class="trs-note">⚠ Performance non calculable — ajoutez une colonne « Cadence nominale » ou configurez <code>CADENCE_NOMINALE</code> dans app.py</span>
-    {% endif %}
-  </div>
-
-  <div class="panel" style="margin-bottom:1.75rem;">
-    <div class="timeline-toolbar">
-      <div class="tab-group">
-        <button class="tab-btn active" data-tab="mois"    onclick="switchTrsTab('mois')">Mois</button>
-        <button class="tab-btn"        data-tab="semaine" onclick="switchTrsTab('semaine')">Semaine</button>
-        <button class="tab-btn"        data-tab="jour"    onclick="switchTrsTab('jour')">Jour</button>
-      </div>
-      <select class="group-select" id="trs-group-select" onchange="switchTrsGroup(this.value)">
-        <option value="global">Atelier complet</option>
-        {% if trs_timeline.has_machine %}
-        <optgroup label="Par machine">
-          {% for m in trs_timeline.machines %}
-          <option value="machine:{{ m }}">🏭 {{ m }}</option>
-          {% endfor %}
-        </optgroup>
-        {% endif %}
-        {% if trs_timeline.familles %}
-        <optgroup label="Par famille">
-          {% for f in trs_timeline.familles %}
-          <option value="famille:{{ f }}">🏷 {{ f }}</option>
-          {% endfor %}
-        </optgroup>
-        {% endif %}
-      </select>
-    </div>
-
-    <div style="position:relative;height:280px;">
-      <canvas id="trsTimelineChart"></canvas>
-    </div>
-
-    <div class="table-scroll" style="margin-top:1.25rem;">
-      <table>
-        <thead>
-          <tr>
-            <th>Période</th>
-            <th style="text-align:center;">Postes</th>
-            <th style="text-align:center;">
-              Disponibilité
-              <button class="info-btn" style="margin-left:.3rem;" onclick="openModal('modal-col-dispo')">?</button>
-            </th>
-            <th style="text-align:center;">
-              Performance
-              <button class="info-btn" style="margin-left:.3rem;" onclick="openModal('modal-col-perf')">?</button>
-            </th>
-            <th style="text-align:center;">
-              Qualité
-              <button class="info-btn" style="margin-left:.3rem;" onclick="openModal('modal-col-qualite')">?</button>
-            </th>
-            <th style="text-align:center;">
-              TRS
-              <button class="info-btn" style="margin-left:.3rem;" onclick="openModal('modal-col-trs')">?</button>
-            </th>
-          </tr>
-        </thead>
-        <tbody id="trs-tbody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- ── GRAPHIQUES ── -->
-  <div class="section-label">Analyse graphique</div>
-  <div class="panels">
-    <div class="panel">
-      <div class="panel-title">📊 Causes d'arrêt <span class="accent">— occurrences</span></div>
-      <div class="chart-box">
-        <canvas id="causesChart"></canvas>
-      </div>
-    </div>
-    <div class="panel">
-      <div class="panel-title">🥧 Répartition <span class="accent">par famille</span></div>
-      <div class="chart-box">
-        <canvas id="familleChart"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── TABLEAU FAMILLE ── -->
-  <div class="section-label">Tableau par famille</div>
-  <div class="panel" style="margin-bottom:1.75rem;">
-    <div class="table-scroll">
-      <table>
-        <thead>
-          <tr>
-            <th>Famille</th>
-            <th>Saisies</th>
-            <th>Heures produites</th>
-            <th>Pièces KO</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in famille_table %}
-          <tr>
-            <td><span class="tag-famille">{{ row['Famille'] or '—' }}</span></td>
-            <td class="num">{{ row['Saisies'] }}</td>
-            <td class="num">{{ row['Heures produites'] }}</td>
-            <td class="num">{{ row['Pièces KO'] }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- ── IA INSIGHTS ── -->
-  {% if insights %}
-  <div class="section-label">Analyse IA</div>
-  <div class="ia-badge">🤖 Généré par IA — Ollama local</div>
-  <div class="insights-grid">
-    <div class="insight-card probleme">
-      <div class="insight-header">
-        <span class="insight-icon">🔴</span> Problème principal
-      </div>
-      <div class="insight-text">{{ insights.probleme_principal }}</div>
-    </div>
-    <div class="insight-card tendance">
-      <div class="insight-header">
-        <span class="insight-icon">🟠</span> Tendance détectée
-      </div>
-      <div class="insight-text">{{ insights.tendance }}</div>
-    </div>
-    <div class="insight-card recommandation">
-      <div class="insight-header">
-        <span class="insight-icon">🟢</span> Recommandation
-      </div>
-      <div class="insight-text">{{ insights.recommandation }}</div>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- ── PREVIEW ── -->
-  <div class="preview-header">
-    <div class="section-label" style="flex:1;margin-bottom:0;">
-      Aperçu des données
-      <small style="color:#9aafc4;font-weight:400;font-size:.8rem;">(50 premières lignes)</small>
-    </div>
-    <button class="toggle-btn" onclick="togglePreview()">Afficher / Masquer</button>
-  </div>
-
-  <div id="preview-table">
-    <div class="table-scroll">
-      <table>
-        <thead>
-          <tr>
-            {% for col in colonnes %}<th>{{ col }}</th>{% endfor %}
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in preview %}
-          <tr>
-            {% for col in colonnes %}
-            <td>{{ row[col] if row[col] is not none else '—' }}</td>
+    <!-- Last 5 watches -->
+    <div class="card">
+      <div class="section-title">Dernières montres ajoutées</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Marque / Réf.</th>
+              <th>Prix achat</th>
+              <th>Valeur actuelle</th>
+              <th>+/- Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for w in watches[:5] %}
+            <tr>
+              <td>
+                <a href="{{ url_for('montre', watch_id=w.id) }}" class="text-gold fw-600">{{ w.marque }}</a>
+                <div style="font-size:0.78rem; color:var(--muted);">{{ w.reference }}</div>
+              </td>
+              <td>{{ w.prix_achat | money }}</td>
+              <td class="fw-600">{{ w.prix_actuel | money }}</td>
+              <td class="{{ 'text-green' if w.plus_value_pct >= 0 else 'text-red' }}">
+                {{ '+' if w.plus_value_pct >= 0 else '' }}{{ "%.1f" | format(w.plus_value_pct) }}%
+              </td>
+            </tr>
             {% endfor %}
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-</main>
-
-<footer>PerfCNC &copy; 2026 — Tableau de bord performance atelier CNC</footer>
-
-<!-- ══════════════════════
-     MODALS "Comment c'est calculé ?"
-══════════════════════ -->
-
-<!-- Modal : Total saisies -->
-<div class="modal-overlay" id="modal-saisies" onclick="closeModal(event, 'modal-saisies')">
-  <div class="modal-box">
-    <div class="modal-head">
-      <h3>📋 Total saisies</h3>
-      <button class="modal-close" onclick="document.getElementById('modal-saisies').classList.remove('open')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-section">
-        <div class="modal-section-label">Définition</div>
-        <div class="modal-text">
-          Nombre de lignes valides lues dans votre fichier Excel après nettoyage.
-          Chaque ligne représente un <span class="val">poste de production</span> ou une saisie d'opérateur.
-        </div>
+          </tbody>
+        </table>
       </div>
-      <div class="modal-section">
-        <div class="modal-section-label">Valeur actuelle</div>
-        <div class="modal-formula">
-          Total saisies = <span class="hl">{{ total_saisies }} lignes</span>
+      {% if watches | length > 5 %}
+        <div style="margin-top:1rem; text-align:right;">
+          <a href="{{ url_for('collection') }}" style="font-size:0.8rem;">Voir toute la collection →</a>
         </div>
-      </div>
-      <div class="modal-section">
-        <div class="modal-section-label">Utilisation dans PerfCNC</div>
-        <div class="modal-text">
-          Ce nombre est la base du calcul du temps d'ouverture théorique :<br>
-          <strong>{{ total_saisies }} postes × {{ indicateurs.heures_poste }}h = {{ indicateurs.heures_ouverture_theoriques }}h théoriques</strong>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal : Heures produites -->
-<div class="modal-overlay" id="modal-heures" onclick="closeModal(event, 'modal-heures')">
-  <div class="modal-box">
-    <div class="modal-head">
-      <h3>⏱️ Heures produites (moyenne)</h3>
-      <button class="modal-close" onclick="document.getElementById('modal-heures').classList.remove('open')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-section">
-        <div class="modal-section-label">Formule</div>
-        <div class="modal-formula">
-          Moyenne = <span class="hl">Σ Heures produites</span> / Nombre de saisies<br>
-          = <span class="hl">{{ total_heures_produites }} h</span> / {{ total_saisies }} = <span class="hl">{{ moyenne_heures }} h</span>
-        </div>
-      </div>
-      <div class="modal-section">
-        <div class="modal-section-label">Interprétation</div>
-        <div class="modal-text">
-          Une moyenne de <span class="val">{{ moyenne_heures }} h</span> par poste, pour un poste théorique de
-          <span class="val">{{ indicateurs.heures_poste }} h</span>, correspond à une disponibilité brute de
-          <span class="val">{{ indicateurs.disponibilite }} %</span>.
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal : Total rebuts -->
-<div class="modal-overlay" id="modal-rebuts" onclick="closeModal(event, 'modal-rebuts')">
-  <div class="modal-box">
-    <div class="modal-head">
-      <h3>⚠️ Total pièces KO (rebuts)</h3>
-      <button class="modal-close" onclick="document.getElementById('modal-rebuts').classList.remove('open')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-section">
-        <div class="modal-section-label">Formule</div>
-        <div class="modal-formula">
-          Total rebuts = <span class="hl">Σ (colonne "Pièces KO")</span><br>
-          = <span class="hl">{{ total_rebuts }} pièces</span>
-        </div>
-      </div>
-      <div class="modal-section">
-        <div class="modal-section-label">Interprétation</div>
-        <div class="modal-text">
-          Les rebuts sont des pièces non conformes, retirées de la production.
-          {% if indicateurs.taux_qualite is not none %}
-          Le <span class="val">taux qualité de {{ indicateurs.taux_qualite }} %</span> est calculé grâce à la colonne optionnelle « Total pièces ».
-          {% else %}
-          Pour calculer le <span class="val">taux qualité</span>, ajoutez une colonne « Total pièces » dans votre fichier Excel.
-          {% endif %}
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal : TRS -->
-<div class="modal-overlay" id="modal-trs" onclick="closeModal(event, 'modal-trs')">
-  <div class="modal-box">
-    <div class="modal-head">
-      <h3>📊 TRS — Taux de Rendement Synthétique</h3>
-      <button class="modal-close" onclick="document.getElementById('modal-trs').classList.remove('open')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-section">
-        <div class="modal-section-label">Formule générale</div>
-        <div class="modal-formula">
-          TRS = <span class="hl">Disponibilité × Performance × Qualité</span><br><br>
-          {% if indicateurs.taux_qualite is not none %}
-          TRS = {{ indicateurs.disponibilite }} % × <em>Perf.</em> × {{ indicateurs.taux_qualite }} %<br>
-          <span style="color:#7a9ac8;font-size:.85rem;">↳ Performance non mesurable sans cadence nominale dans le fichier</span>
-          {% else %}
-          TRS ≈ Disponibilité = <span class="hl">{{ indicateurs.trs }} %</span><br>
-          <span style="color:#7a9ac8;font-size:.85rem;">↳ Modèle simplifié : Performance et Qualité non disponibles dans ce fichier</span>
-          {% endif %}
-        </div>
-      </div>
-      <div class="modal-section">
-        <div class="modal-section-label">Valeurs de référence industrie</div>
-        <div class="modal-ref-row">
-          <span class="modal-ref-badge mref-bad">Mauvais &lt;60 %</span>
-          <span class="modal-ref-badge mref-ok">Acceptable 60–75 %</span>
-          <span class="modal-ref-badge mref-good">Bon 75–85 %</span>
-          <span class="modal-ref-badge mref-exc">Excellent &gt;85 %</span>
-        </div>
-      </div>
-      <div class="modal-section">
-        <div class="modal-text">
-          Votre TRS actuel : <span class="val">{{ indicateurs.trs }} %</span>
-          {% if indicateurs.trs is not none %}
-            {% if indicateurs.trs >= 85 %}— Excellent ! Niveau classe mondiale.
-            {% elif indicateurs.trs >= 75 %}— Bon niveau. Objectif : franchir les 85 %.
-            {% elif indicateurs.trs >= 60 %}— Zone acceptable. Des actions ciblées peuvent vite améliorer ce score.
-            {% else %}— Zone critique. Analysez les causes d'arrêt et les rebuts en priorité.
-            {% endif %}
-          {% endif %}
-        </div>
-      </div>
-      <div class="modal-section">
-        <div class="modal-text" style="font-size:.82rem;color:var(--muted);">
-          Pour approfondir → <a href="/glossaire" style="color:var(--navy);font-weight:600;">Glossaire TRS</a> · <a href="/exercices" style="color:var(--navy);font-weight:600;">Exercices pratiques</a>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal : Disponibilité -->
-<div class="modal-overlay" id="modal-dispo" onclick="closeModal(event, 'modal-dispo')">
-  <div class="modal-box">
-    <div class="modal-head">
-      <h3>🔧 Disponibilité machine</h3>
-      <button class="modal-close" onclick="document.getElementById('modal-dispo').classList.remove('open')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-section">
-        <div class="modal-section-label">Formule appliquée à vos données</div>
-        <div class="modal-formula">
-          Disponibilité = <span class="hl">Heures produites</span> / <span class="hl">Heures d'ouverture</span> × 100<br><br>
-          = <span class="hl">{{ total_heures_produites }} h</span> / (<span class="hl">{{ total_saisies }} postes × {{ indicateurs.heures_poste }} h</span>) × 100<br>
-          = {{ total_heures_produites }} / {{ indicateurs.heures_ouverture_theoriques }} × 100<br>
-          = <span class="hl">{{ indicateurs.disponibilite }} %</span>
-        </div>
-      </div>
-      <div class="modal-section">
-        <div class="modal-section-label">Interprétation</div>
-        <div class="modal-text">
-          Sur les <span class="val">{{ indicateurs.heures_ouverture_theoriques }} h</span> théoriquement disponibles,
-          la machine a réellement produit pendant <span class="val">{{ total_heures_produites }} h</span>.
-          Les <span class="val">{{ (indicateurs.heures_ouverture_theoriques - total_heures_produites) | round(1) }} h</span> restantes
-          correspondent aux arrêts (pannes, changements d'outils, attentes…).
-        </div>
-      </div>
-      <div class="modal-section">
-        <div class="modal-section-label">Valeurs de référence</div>
-        <div class="modal-ref-row">
-          <span class="modal-ref-badge mref-bad">Mauvais &lt;60 %</span>
-          <span class="modal-ref-badge mref-ok">Acceptable 60–75 %</span>
-          <span class="modal-ref-badge mref-good">Bon 75–85 %</span>
-          <span class="modal-ref-badge mref-exc">Excellent &gt;85 %</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal : Taux qualité -->
-<div class="modal-overlay" id="modal-qualite" onclick="closeModal(event, 'modal-qualite')">
-  <div class="modal-box">
-    <div class="modal-head">
-      <h3>✅ Taux qualité</h3>
-      <button class="modal-close" onclick="document.getElementById('modal-qualite').classList.remove('open')">✕</button>
-    </div>
-    <div class="modal-body">
-      {% if indicateurs.taux_qualite is not none %}
-      <div class="modal-section">
-        <div class="modal-section-label">Formule appliquée à vos données</div>
-        <div class="modal-formula">
-          Taux qualité = (<span class="hl">Total pièces − Pièces KO</span>) / Total pièces × 100<br><br>
-          Pièces KO = <span class="hl">{{ total_rebuts }}</span><br>
-          Taux qualité = <span class="hl">{{ indicateurs.taux_qualite }} %</span>
-        </div>
-      </div>
-      {% else %}
-      <div class="modal-section">
-        <div class="modal-section-label">Donnée non disponible</div>
-        <div class="modal-formula">
-          Taux qualité = (<span class="hl">Total pièces − Pièces KO</span>) / Total pièces × 100
-        </div>
-        <div class="modal-text" style="margin-top:.75rem;">
-          Pour activer ce calcul, ajoutez une colonne <strong>« Total pièces »</strong> dans votre fichier Excel.
-          PerfCNC la détectera automatiquement.
-        </div>
-      </div>
       {% endif %}
-      <div class="modal-section">
-        <div class="modal-section-label">Valeurs de référence</div>
-        <div class="modal-ref-row">
-          <span class="modal-ref-badge mref-bad">Mauvais &lt;95 %</span>
-          <span class="modal-ref-badge mref-ok">Acceptable 95–98 %</span>
-          <span class="modal-ref-badge mref-exc">Excellent &gt;98 %</span>
-        </div>
-      </div>
     </div>
   </div>
-</div>
 
-<!-- Modales colonnes tableau TRS -->
-<div class="modal-overlay" id="modal-col-dispo" onclick="closeModal(event,'modal-col-dispo')">
-  <div class="modal-box">
-    <div class="modal-head"><h3>🔧 Disponibilité — colonne tableau</h3>
-      <button class="modal-close" onclick="document.getElementById('modal-col-dispo').classList.remove('open')">✕</button></div>
-    <div class="modal-body">
-      <div class="modal-section"><div class="modal-section-label">Formule par période</div>
-        <div class="modal-formula">Disponibilité = <span class="hl">Σ Heures produites</span> / (Nb postes × {{ indicateurs.heures_poste }} h) × 100</div></div>
-      <div class="modal-section"><div class="modal-text">Mesure le temps réel de production par rapport au temps théorique d'ouverture. Un arrêt machine, une attente matière ou un changement d'outil réduisent cette valeur.</div></div>
-    </div>
+{% else %}
+  <div class="empty-state">
+    <div style="font-size:3rem; margin-bottom:1rem;">⌚</div>
+    <h2>Votre collection est vide</h2>
+    <p>Ajoutez votre première montre pour commencer à suivre sa valeur.</p>
+    <a href="{{ url_for('ajouter') }}" class="btn btn-gold">Ajouter ma première montre</a>
   </div>
-</div>
-
-<div class="modal-overlay" id="modal-col-perf" onclick="closeModal(event,'modal-col-perf')">
-  <div class="modal-box">
-    <div class="modal-head"><h3>⚡ Performance — colonne tableau</h3>
-      <button class="modal-close" onclick="document.getElementById('modal-col-perf').classList.remove('open')">✕</button></div>
-    <div class="modal-body">
-      <div class="modal-section"><div class="modal-section-label">Formule par période</div>
-        <div class="modal-formula">Performance = <span class="hl">Pièces produites</span> / (Heures prod. × Cadence nominale) × 100</div></div>
-      <div class="modal-section"><div class="modal-text">
-        {% if trs_timeline.has_cadence %}Calculée avec <strong>CADENCE_NOMINALE = {{ trs_timeline.has_cadence }}</strong> pièces/heure. Mesure si la machine tourne à pleine vitesse.
-        {% else %}Affiche « — » car <code>CADENCE_NOMINALE</code> n'est pas configuré dans app.py et la colonne « Total pièces » est absente ou <code>CADENCE_NOMINALE = None</code>.{% endif %}
-      </div></div>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modal-col-qualite" onclick="closeModal(event,'modal-col-qualite')">
-  <div class="modal-box">
-    <div class="modal-head"><h3>✅ Qualité — colonne tableau</h3>
-      <button class="modal-close" onclick="document.getElementById('modal-col-qualite').classList.remove('open')">✕</button></div>
-    <div class="modal-body">
-      <div class="modal-section"><div class="modal-section-label">Formule par période</div>
-        <div class="modal-formula">Qualité = (<span class="hl">Total pièces − Pièces KO</span>) / Total pièces × 100</div></div>
-      <div class="modal-section"><div class="modal-text">
-        {% if trs_timeline.has_total_pieces %}Calculée à partir de la colonne « Total pièces » de votre fichier.
-        {% else %}Affiche « — » car la colonne optionnelle <strong>« Total pièces »</strong> est absente du fichier.{% endif %}
-      </div></div>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modal-col-trs" onclick="closeModal(event,'modal-col-trs')">
-  <div class="modal-box">
-    <div class="modal-head"><h3>📊 TRS par période</h3>
-      <button class="modal-close" onclick="document.getElementById('modal-col-trs').classList.remove('open')">✕</button></div>
-    <div class="modal-body">
-      <div class="modal-section"><div class="modal-section-label">Formule</div>
-        <div class="modal-formula">
-          {% if trs_timeline.has_cadence and trs_timeline.has_total_pieces %}TRS = <span class="hl">Disponibilité × Performance × Qualité</span> / 10 000
-          {% elif trs_timeline.has_total_pieces %}TRS ≈ <span class="hl">Disponibilité × Qualité</span> / 100 <br><span style="color:#7a9ac8;font-size:.85rem;">(Performance non disponible)</span>
-          {% else %}TRS ≈ <span class="hl">Disponibilité</span> <br><span style="color:#7a9ac8;font-size:.85rem;">(Qualité et Performance non disponibles)</span>{% endif %}
-        </div></div>
-      <div class="modal-section"><div class="modal-section-label">Zones de référence</div>
-        <div class="modal-ref-row">
-          <span class="modal-ref-badge mref-bad">Critique &lt;60 %</span>
-          <span class="modal-ref-badge mref-ok">Acceptable 60–75 %</span>
-          <span class="modal-ref-badge mref-good">Bon 75–85 %</span>
-          <span class="modal-ref-badge mref-exc">Excellent &gt;85 %</span>
-        </div></div>
-    </div>
-  </div>
-</div>
-
-<script>
-  // ── Palette industrielle ──
-  const NAVY   = '#1F3864';
-  const ORANGE = '#ED7D31';
-  const COLORS = [
-    '#1F3864','#ED7D31','#2c4f8c','#c96520','#4472C4',
-    '#FFC000','#70AD47','#FF0000','#00B0F0','#7030A0',
-  ];
-
-  // ── Causes d'arrêt — barres ──
-  const causesLabels = {{ causes_labels | safe }};
-  const causesValues = {{ causes_values | safe }};
-
-  new Chart(document.getElementById('causesChart'), {
-    type: 'bar',
-    data: {
-      labels: causesLabels,
-      datasets: [{
-        label: 'Occurrences',
-        data: causesValues,
-        backgroundColor: causesLabels.map((_, i) => COLORS[i % COLORS.length]),
-        borderRadius: 5,
-        borderSkipped: false,
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: ctx => ` ${ctx.parsed.y} occurrence${ctx.parsed.y > 1 ? 's' : ''}`,
-          }
-        }
-      },
-      scales: {
-        x: {
-          grid: { display: false },
-          ticks: { font: { size: 10 }, maxRotation: 35, color: '#5a6a80' }
-        },
-        y: {
-          beginAtZero: true,
-          grid: { color: '#edf0f5' },
-          ticks: { precision: 0, color: '#5a6a80' }
-        }
-      }
-    }
-  });
-
-  // ── Familles — camembert ──
-  const famLabels = {{ famille_pie_labels | safe }};
-  const famValues = {{ famille_pie_values | safe }};
-
-  new Chart(document.getElementById('familleChart'), {
-    type: 'doughnut',
-    data: {
-      labels: famLabels,
-      datasets: [{
-        data: famValues,
-        backgroundColor: COLORS,
-        borderWidth: 2,
-        borderColor: '#f4f6f9',
-        hoverOffset: 8,
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '58%',
-      plugins: {
-        legend: {
-          position: 'right',
-          labels: { font: { size: 11 }, color: '#1a2333', boxWidth: 14, padding: 12 }
-        },
-        tooltip: {
-          callbacks: {
-            label: ctx => ` ${ctx.label} : ${ctx.parsed} saisie${ctx.parsed > 1 ? 's' : ''}`,
-          }
-        }
-      }
-    }
-  });
-
-  function togglePreview() {
-    const el = document.getElementById('preview-table');
-    el.style.display = el.style.display === 'none' ? 'block' : 'none';
-  }
-
-  // ══════════════════════════════════════════
-  //  ÉVOLUTION DU TRS — timeline chart + table
-  // ══════════════════════════════════════════
-  const TRS_DATA = {{ trs_timeline | tojson | safe }};
-  let _trsChart = null;
-  let _trsTab   = 'mois';
-  let _trsGroup = 'global';
-
-  // Plugin zones colorées (rouge/orange/vert) — pas de dépendance externe
-  const _trsZones = {
-    id: 'trsZones',
-    beforeDraw(chart) {
-      const { ctx, chartArea, scales: { y } } = chart;
-      if (!chartArea) return;
-      const { left, right } = chartArea;
-      ctx.save();
-      [[0,60,'rgba(192,57,43,0.07)'],[60,75,'rgba(237,125,49,0.07)'],[75,100,'rgba(26,122,74,0.07)']].forEach(([from,to,color]) => {
-        ctx.fillStyle = color;
-        ctx.fillRect(left, y.getPixelForValue(to), right - left, y.getPixelForValue(from) - y.getPixelForValue(to));
-      });
-      ctx.restore();
-    }
-  };
-
-  function _getRows(group, tab) {
-    if (group === 'global') return TRS_DATA[tab] || [];
-    const sep  = group.indexOf(':');
-    const type = group.slice(0, sep);
-    const name = group.slice(sep + 1);
-    const src  = type === 'machine' ? TRS_DATA.par_machine : TRS_DATA.par_famille;
-    return (src?.[name]?.[tab]) || [];
-  }
-
-  function _renderTrs() {
-    const rows   = _getRows(_trsGroup, _trsTab);
-    const labels = rows.map(r => r.periode);
-    const trsV   = rows.map(r => r.trs);
-    const dispoV = rows.map(r => r.disponibilite);
-
-    if (_trsChart) _trsChart.destroy();
-    _trsChart = new Chart(document.getElementById('trsTimelineChart'), {
-      type: 'line',
-      plugins: [_trsZones],
-      data: {
-        labels,
-        datasets: [
-          {
-            label: 'TRS (%)',
-            data: trsV,
-            borderColor: '#1F3864',
-            backgroundColor: 'rgba(31,56,100,0.08)',
-            fill: true, tension: 0.35,
-            pointRadius: 5, pointHoverRadius: 7,
-            pointBackgroundColor: trsV.map(v =>
-              v === null ? '#ccc' : v >= 75 ? '#1a7a4a' : v >= 60 ? '#ED7D31' : '#c0392b'),
-          },
-          {
-            label: 'Disponibilité (%)',
-            data: dispoV,
-            borderColor: '#2980b9', borderDash: [5,4],
-            pointRadius: 3, fill: false, tension: 0.25,
-          },
-        ],
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        scales: {
-          y: { min: 0, max: 100,
-               ticks: { callback: v => v + ' %', color: '#5a6a80', font: { size: 10 } },
-               grid: { color: '#edf0f5' } },
-          x: { ticks: { color: '#5a6a80', font: { size: 10 }, maxRotation: 35, maxTicksLimit: 18 },
-               grid: { display: false } },
-        },
-        plugins: {
-          legend: { position: 'top', labels: { font: { size: 11 }, color: '#1a2333' } },
-          tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label} : ${ctx.parsed.y !== null ? ctx.parsed.y + ' %' : '—'}` } },
-        },
-      },
-    });
-
-    // Table
-    const tbody = document.getElementById('trs-tbody');
-    tbody.innerHTML = rows.length ? rows.map(r => {
-      const cls = r.trs === null ? 'tc-nd' : r.trs >= 75 ? 'tc-good' : r.trs >= 60 ? 'tc-ok' : 'tc-bad';
-      const fmt = v => v !== null ? v + ' %' : '<span class="tc-nd">—</span>';
-      return `<tr>
-        <td><strong>${r.periode}</strong></td>
-        <td class="num">${r.nb_postes}</td>
-        <td class="num">${fmt(r.disponibilite)}</td>
-        <td class="num">${r.performance !== null ? r.performance + ' %' : '<span class="tc-nd">—</span>'}</td>
-        <td class="num">${fmt(r.qualite)}</td>
-        <td class="num ${cls}">${r.trs !== null ? r.trs + ' %' : '—'}</td>
-      </tr>`;
-    }).join('') : '<tr><td colspan="6" style="text-align:center;color:#9aafc4;padding:1rem;">Aucune date valide dans les données</td></tr>';
-  }
-
-  function switchTrsTab(tab) {
-    _trsTab = tab;
-    document.querySelectorAll('.tab-btn').forEach(b =>
-      b.classList.toggle('active', b.dataset.tab === tab));
-    _renderTrs();
-  }
-
-  function switchTrsGroup(val) {
-    _trsGroup = val;
-    _renderTrs();
-  }
-
-  _renderTrs();
-
-  // ── Modals ──
-  function openModal(id) {
-    document.getElementById(id).classList.add('open');
-  }
-
-  function closeModal(event, id) {
-    if (event.target === event.currentTarget) {
-      document.getElementById(id).classList.remove('open');
-    }
-  }
-
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-      document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
-    }
-  });
-</script>
-
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/static/sw.js').catch(() => {});
-    });
-  }
-</script>
-
-</body>
-</html>
+{% endif %}
+{% endblock %}

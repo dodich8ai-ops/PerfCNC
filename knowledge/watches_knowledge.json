@@ -1,0 +1,10 @@
+{
+  "version": "1.0",
+  "marques_premium": ["Rolex", "Patek Philippe", "Audemars Piguet", "Richard Mille", "Vacheron Constantin"],
+  "etats": {
+    "Excellent": "Montre en parfait état, sans trace d'usure visible.",
+    "Bon": "Légères traces d'usure normales, fonctionnement parfait.",
+    "Moyen": "Usure visible, peut nécessiter un service."
+  },
+  "full_set": "Présence de la boîte et des papiers d'origine. Valorise la montre de 10 à 30%."
+}

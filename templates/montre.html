@@ -1,0 +1,477 @@
+{% extends "base.html" %}
+{% block title %}{{ watch.marque }} {{ watch.reference }} — WatchFolio{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Back link */
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+    transition: color 0.15s;
+  }
+  .back-link:hover { color: var(--gold); opacity: 1; }
+
+  /* Hero layout */
+  .watch-hero {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .watch-detail-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.75rem;
+  }
+
+  .watch-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--gold);
+    letter-spacing: -0.5px;
+  }
+
+  .watch-subtitle {
+    font-size: 1rem;
+    color: var(--muted);
+    margin-top: 0.2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem 1.5rem;
+  }
+
+  .detail-item {}
+  .detail-key {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+  }
+  .detail-val {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .notes-block {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+  }
+  .notes-text {
+    font-size: 0.85rem;
+    color: var(--muted);
+    white-space: pre-wrap;
+    line-height: 1.7;
+  }
+
+  /* Value card */
+  .value-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .value-section-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    margin-bottom: 0.25rem;
+  }
+
+  .value-current {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: var(--gold);
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+
+  .value-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+  }
+
+  .value-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.875rem;
+  }
+
+  .value-label { color: var(--muted); }
+
+  .plus-value-big {
+    font-size: 1.2rem;
+    font-weight: 700;
+  }
+
+  /* Price history sparkline */
+  .sparkline {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 50px;
+    padding: 0.5rem 0;
+  }
+
+  .spark-bar {
+    flex: 1;
+    background: var(--gold);
+    border-radius: 3px 3px 0 0;
+    opacity: 0.7;
+    min-height: 4px;
+    transition: opacity 0.15s;
+    position: relative;
+  }
+
+  .spark-bar:hover { opacity: 1; }
+
+  /* Add price form */
+  .add-price-form {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+
+  .add-price-form .form-control {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  /* AI card */
+  .ai-card {
+    background: var(--bg2);
+    border: 1px solid var(--gold);
+    border-radius: 14px;
+    padding: 1.75rem;
+    margin-bottom: 2rem;
+  }
+
+  .ai-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .ai-icon {
+    font-size: 1.5rem;
+  }
+
+  .ai-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--gold);
+  }
+
+  .ai-subtitle {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  .tendance-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .tendance-hausse { background: rgba(76,175,125,0.15); color: var(--green); }
+  .tendance-stable { background: var(--gold-lt); color: var(--gold); }
+  .tendance-baisse { background: rgba(224,92,92,0.15); color: var(--red); }
+
+  .ai-conseil {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: var(--text);
+    margin: 1rem 0;
+  }
+
+  .ai-fourchette {
+    display: inline-block;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--gold);
+  }
+
+  .ai-offline {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--muted);
+    font-size: 0.875rem;
+    padding: 1rem;
+    background: var(--bg3);
+    border-radius: 8px;
+  }
+
+  /* Danger zone */
+  .danger-zone {
+    background: var(--bg2);
+    border: 1px solid rgba(224,92,92,0.25);
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+  }
+
+  .danger-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--red);
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .danger-text {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  @media (max-width: 768px) {
+    .watch-hero { grid-template-columns: 1fr; }
+    .detail-grid { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('collection') }}" class="back-link">← Retour à la collection</a>
+
+<!-- Hero -->
+<div class="watch-hero">
+  <div class="watch-detail-card">
+    <div class="watch-title">{{ watch.marque }}</div>
+    <div class="watch-subtitle">{{ watch.reference }}</div>
+
+    <div class="detail-grid">
+      <div class="detail-item">
+        <div class="detail-key">Année</div>
+        <div class="detail-val">{{ watch.annee or '—' }}</div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-key">État</div>
+        <div class="detail-val">
+          <span class="badge {% if watch.etat == 'Excellent' %}badge-green{% elif watch.etat == 'Bon' %}badge-gold{% else %}badge-muted{% endif %}">
+            {{ watch.etat }}
+          </span>
+        </div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-key">Full Set</div>
+        <div class="detail-val">
+          {% if watch.full_set %}
+            <span class="badge badge-green">Oui</span>
+          {% else %}
+            <span class="text-muted">Non</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="detail-item">
+        <div class="detail-key">Date d'ajout</div>
+        <div class="detail-val">{{ watch.date_ajout_fr }}</div>
+      </div>
+    </div>
+
+    {% if watch.notes %}
+      <div class="notes-block">
+        <div class="detail-key" style="margin-bottom:0.5rem;">Notes</div>
+        <div class="notes-text">{{ watch.notes }}</div>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="value-card">
+    <div>
+      <div class="value-section-title">Valeur actuelle estimée</div>
+      <div class="value-current">{{ watch.prix_actuel | money }}</div>
+    </div>
+
+    <hr class="value-divider">
+
+    <div class="value-row">
+      <span class="value-label">Prix d'achat</span>
+      <span class="fw-600">{{ watch.prix_achat | money }}</span>
+    </div>
+
+    <div class="value-row">
+      <span class="value-label">Plus-value</span>
+      <span class="plus-value-big {{ 'text-green' if watch.plus_value >= 0 else 'text-red' }}">
+        {{ '+' if watch.plus_value >= 0 else '' }}{{ watch.plus_value | money }}
+      </span>
+    </div>
+
+    <div class="value-row">
+      <span class="value-label">Performance</span>
+      <span class="fw-600 {{ 'text-green' if watch.plus_value_pct >= 0 else 'text-red' }}">
+        {{ '+' if watch.plus_value_pct >= 0 else '' }}{{ "%.1f" | format(watch.plus_value_pct) }}%
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- AI Conseil -->
+<div class="ai-card">
+  <div class="ai-header">
+    <span class="ai-icon">🤖</span>
+    <div>
+      <div class="ai-title">Conseil IA — Mistral</div>
+      <div class="ai-subtitle">Analyse du marché pour cette montre</div>
+    </div>
+  </div>
+
+  {% if conseil %}
+    {% set t = conseil.get('tendance', 'stable') | lower %}
+    <span class="tendance-badge tendance-{{ t }}">
+      {% if t == 'hausse' %}▲ Tendance à la hausse
+      {% elif t == 'baisse' %}▼ Tendance à la baisse
+      {% else %}= Marché stable
+      {% endif %}
+    </span>
+    <div class="ai-conseil">{{ conseil.get('conseil', '') }}</div>
+    {% if conseil.get('fourchette_prix') %}
+      <div>
+        <span style="font-size:0.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px;">Fourchette de prix</span>
+        <div style="margin-top:0.35rem;">
+          <span class="ai-fourchette">{{ conseil.get('fourchette_prix') }}</span>
+        </div>
+      </div>
+    {% endif %}
+  {% else %}
+    <div class="ai-offline">
+      <span style="font-size:1.25rem;">⚠️</span>
+      <span>Conseil IA indisponible — Ollama hors ligne. Lancez <code style="background:var(--bg);padding:0.1rem 0.4rem;border-radius:4px;">ollama pull mistral</code> puis redémarrez l'application.</span>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Price history -->
+<div class="card mb-3">
+  <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--gold); margin-bottom:1rem;">
+    Historique des prix
+  </div>
+
+  {% if history %}
+    {% set max_prix = history | map(attribute='prix') | max %}
+    {% if history | length > 1 %}
+      <div class="sparkline" title="Évolution du prix">
+        {% for h in history | reverse %}
+          {% set pct = (h.prix / max_prix * 100) | round %}
+          <div class="spark-bar" style="height: {{ pct }}%;" title="{{ h.date_fr }} — {{ h.prix | money }}"></div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="table-wrap mt-2">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Prix</th>
+            <th>Source</th>
+            <th>Variation</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in history %}
+            <tr>
+              <td>{{ h.date_fr }}</td>
+              <td class="fw-600">{{ h.prix | money }}</td>
+              <td><span class="text-muted">{{ h.source }}</span></td>
+              <td>
+                {% if loop.index0 < history | length - 1 %}
+                  {% set prev = history[loop.index0 + 1].prix %}
+                  {% set delta = ((h.prix - prev) / prev * 100) if prev != 0 else 0 %}
+                  <span class="{{ 'text-green' if delta >= 0 else 'text-red' }}">
+                    {{ '+' if delta >= 0 else '' }}{{ "%.1f" | format(delta) }}%
+                  </span>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="text-muted" style="font-size:0.875rem;">Aucune entrée dans l'historique.</p>
+  {% endif %}
+
+  <!-- Add price form -->
+  <form method="POST" action="{{ url_for('ajouter_prix', watch_id=watch.id) }}" style="margin-top:1.5rem; padding-top:1.25rem; border-top:1px solid var(--border);">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); margin-bottom:0.75rem;">
+      Mettre à jour le prix
+    </div>
+    <div class="add-price-form">
+      <input
+        class="form-control"
+        type="number"
+        name="prix"
+        placeholder="Nouveau prix (€)"
+        min="0"
+        step="any"
+        required
+        style="max-width:200px;"
+      >
+      <input
+        class="form-control"
+        type="text"
+        name="source"
+        placeholder="Source (ex: Chrono24)"
+        style="max-width:200px;"
+      >
+      <button type="submit" class="btn btn-gold">Enregistrer</button>
+    </div>
+  </form>
+</div>
+
+<!-- Danger zone -->
+<div class="danger-zone">
+  <div class="danger-title">Zone de danger</div>
+  <p class="danger-text">
+    La suppression de cette montre est définitive. Toutes les données (historique de prix, notes) seront perdues.
+  </p>
+  <form method="POST" action="{{ url_for('supprimer_montre', watch_id=watch.id) }}"
+        onsubmit="return confirm('Confirmer la suppression de {{ watch.marque }} {{ watch.reference }} ? Cette action est irréversible.');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-danger">Supprimer cette montre</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Jinja2 doesn't have enumerate built-in, so we compute variations client-side if needed
+  // (The template uses a loop index trick above — works in Jinja2 with loop.index0)
+</script>
+{% endblock %}

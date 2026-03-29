@@ -1,122 +1,85 @@
-"""
-PerfCNC — modèles SQLAlchemy.
-3 tables : User, Analysis, Consent.
-Initialiser avec db.init_app(app) puis db.create_all().
-"""
-import datetime
-import json
-
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+import datetime
 
 db = SQLAlchemy()
+MAX_FREE_WATCHES = 10
+CGU_VERSION = "1.0"
 
-MAX_FREE_ANALYSES = 5
-CGU_VERSION       = "1.0"
-
-
-class User(db.Model, UserMixin):
+class User(db.Model):
     __tablename__ = "user"
+    id           = db.Column(db.Integer, primary_key=True)
+    email        = db.Column(db.String(120), unique=True, nullable=False, index=True)
+    password_hash= db.Column(db.String(256), nullable=False)
+    plan         = db.Column(db.String(20), nullable=False, default="free")
+    created_at   = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    watches      = db.relationship("Watch", backref="owner", lazy="dynamic",
+                                   cascade="all, delete-orphan",
+                                   order_by="Watch.date_ajout.desc()")
 
-    id            = db.Column(db.Integer, primary_key=True)
-    email         = db.Column(db.String(120), unique=True, nullable=False, index=True)
-    password_hash = db.Column(db.String(256), nullable=False)
-    plan          = db.Column(db.String(10),  nullable=False, default="free")
-    created_at    = db.Column(db.DateTime,    nullable=False,
-                              default=datetime.datetime.utcnow)
-
-    analyses = db.relationship(
-        "Analysis", backref="user", lazy="dynamic",
-        cascade="all, delete-orphan",
-        order_by="Analysis.uploaded_at.desc()",
-    )
-    consent = db.relationship(
-        "Consent", backref="user", uselist=False,
-        cascade="all, delete-orphan",
-    )
-
-    # ── Mot de passe ──
-
-    def set_password(self, password: str) -> None:
-        self.password_hash = generate_password_hash(password)
-
-    def check_password(self, password: str) -> bool:
-        return check_password_hash(self.password_hash, password)
-
-    # ── Quotas ──
+    def set_password(self, pw): self.password_hash = generate_password_hash(pw)
+    def check_password(self, pw): return check_password_hash(self.password_hash, pw)
+    def get_id(self): return str(self.id)
+    @property
+    def is_authenticated(self): return True
+    @property
+    def is_active(self): return True
+    @property
+    def is_anonymous(self): return False
 
     @property
-    def analyses_count(self) -> int:
-        return self.analyses.count()
+    def watches_count(self): return self.watches.count()
+    @property
+    def can_add_watch(self):
+        return self.plan == "pro" or self.watches_count < MAX_FREE_WATCHES
+    @property
+    def display_plan(self): return "Pro" if self.plan == "pro" else "Gratuit"
+
+
+class Watch(db.Model):
+    __tablename__ = "watch"
+    id         = db.Column(db.Integer, primary_key=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
+    marque     = db.Column(db.String(100), nullable=False)
+    reference  = db.Column(db.String(100), nullable=False)
+    annee      = db.Column(db.Integer)
+    prix_achat = db.Column(db.Float, nullable=False)
+    etat       = db.Column(db.String(20), nullable=False, default="Bon")
+    full_set   = db.Column(db.Boolean, default=False)
+    notes      = db.Column(db.Text, default="")
+    date_ajout = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    prix_history = db.relationship("PriceHistory", backref="watch", lazy="dynamic",
+                                   cascade="all, delete-orphan",
+                                   order_by="PriceHistory.date.desc()")
 
     @property
-    def can_save_analysis(self) -> bool:
-        return self.plan == "pro" or self.analyses_count < MAX_FREE_ANALYSES
+    def prix_actuel(self):
+        last = self.prix_history.first()
+        return last.prix if last else self.prix_achat
 
     @property
-    def analyses_remaining(self):
-        """None si Pro (illimité), int sinon."""
-        if self.plan == "pro":
-            return None
-        return max(0, MAX_FREE_ANALYSES - self.analyses_count)
+    def plus_value(self):
+        return self.prix_actuel - self.prix_achat
 
     @property
-    def display_plan(self) -> str:
-        return "Pro" if self.plan == "pro" else "Gratuit"
+    def plus_value_pct(self):
+        if self.prix_achat == 0: return 0
+        return (self.plus_value / self.prix_achat) * 100
 
     @property
-    def has_accepted_cgu(self) -> bool:
-        return self.consent is not None
+    def date_ajout_fr(self):
+        return self.date_ajout.strftime("%d/%m/%Y") if self.date_ajout else "—"
 
 
-class Analysis(db.Model):
-    __tablename__ = "analysis"
-
-    id          = db.Column(db.Integer,    primary_key=True)
-    user_id     = db.Column(db.Integer,    db.ForeignKey("user.id"), nullable=False, index=True)
-    filename    = db.Column(db.String(255), nullable=False)
-    uploaded_at = db.Column(db.DateTime,   nullable=False,
-                            default=datetime.datetime.utcnow)
-    # Sérialisation complète du résultat process_excel() (sans preview)
-    stats_json  = db.Column(db.Text, nullable=False)
+class PriceHistory(db.Model):
+    __tablename__ = "price_history"
+    id       = db.Column(db.Integer, primary_key=True)
+    watch_id = db.Column(db.Integer, db.ForeignKey("watch.id"), nullable=False, index=True)
+    prix     = db.Column(db.Float, nullable=False)
+    source   = db.Column(db.String(100), default="Manuel")
+    date     = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
     @property
-    def stats(self) -> dict:
-        return json.loads(self.stats_json)
-
-    # Raccourcis pour les colonnes du tableau historique
-    @property
-    def trs(self):
-        try:
-            return self.stats.get("indicateurs", {}).get("trs")
-        except Exception:
-            return None
-
-    @property
-    def total_saisies(self) -> int:
-        try:
-            return self.stats.get("total_saisies", 0)
-        except Exception:
-            return 0
-
-    @property
-    def total_rebuts(self) -> int:
-        try:
-            return self.stats.get("total_rebuts", 0)
-        except Exception:
-            return 0
-
-    @property
-    def uploaded_at_fr(self) -> str:
-        return self.uploaded_at.strftime("%d/%m/%Y à %H:%M")
-
-
-class Consent(db.Model):
-    __tablename__ = "consent"
-
-    id          = db.Column(db.Integer,   primary_key=True)
-    user_id     = db.Column(db.Integer,   db.ForeignKey("user.id"), nullable=False)
-    accepted_at = db.Column(db.DateTime,  nullable=False,
-                            default=datetime.datetime.utcnow)
-    version_cgu = db.Column(db.String(10), nullable=False, default=CGU_VERSION)
+    def date_fr(self):
+        return self.date.strftime("%d/%m/%Y") if self.date else "—"

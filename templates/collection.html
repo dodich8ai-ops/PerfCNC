@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}Ma collection — WatchFolio{% endblock %}
+
+{% block extra_head %}
+<style>
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  .page-title span {
+    color: var(--muted);
+    font-size: 1rem;
+    font-weight: 400;
+    margin-left: 0.5rem;
+  }
+
+  /* Watch grid */
+  .watch-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+  }
+
+  .watch-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    transition: border-color 0.2s, transform 0.15s;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .watch-card:hover {
+    border-color: var(--gold);
+    transform: translateY(-2px);
+    color: inherit;
+    opacity: 1;
+  }
+
+  .watch-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .watch-marque {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--gold);
+    line-height: 1.2;
+  }
+
+  .watch-reference {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 0.15rem;
+  }
+
+  .watch-meta {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .watch-annee {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  .watch-prix-actuel {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  .watch-plus-value {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .watch-prix-achat {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  .arrow-up   { color: var(--green); }
+  .arrow-down { color: var(--red); }
+
+  /* Empty state */
+  .empty-card {
+    grid-column: 1 / -1;
+    background: var(--bg2);
+    border: 1px dashed var(--border);
+    border-radius: 14px;
+    padding: 4rem 2rem;
+    text-align: center;
+    color: var(--muted);
+  }
+
+  .empty-card h2 {
+    font-size: 1.2rem;
+    color: var(--text);
+    margin: 0.75rem 0 0.5rem;
+  }
+
+  .empty-card p {
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 900px) {
+    .watch-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 560px) {
+    .watch-grid { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">
+    Ma collection
+    <span>({{ watches | length }} montre{% if watches | length > 1 %}s{% endif %})</span>
+  </h1>
+  <a href="{{ url_for('ajouter') }}" class="btn btn-gold">+ Ajouter une montre</a>
+</div>
+
+<div class="watch-grid">
+  {% if watches %}
+    {% for w in watches %}
+      <a href="{{ url_for('montre', watch_id=w.id) }}" class="watch-card">
+        <div class="watch-card-top">
+          <div>
+            <div class="watch-marque">{{ w.marque }}</div>
+            <div class="watch-reference">{{ w.reference }}</div>
+          </div>
+          {% if w.full_set %}
+            <span class="badge badge-gold" title="Boîte + papiers">Full Set</span>
+          {% endif %}
+        </div>
+
+        <div class="watch-meta">
+          {% if w.annee %}
+            <span class="watch-annee">{{ w.annee }}</span>
+            <span style="color:var(--border);">·</span>
+          {% endif %}
+          <span class="badge badge-muted">{{ w.etat }}</span>
+        </div>
+
+        <div class="watch-prix-actuel">{{ w.prix_actuel | money }}</div>
+
+        <div class="flex items-center justify-between">
+          <div class="watch-plus-value {{ 'arrow-up' if w.plus_value_pct >= 0 else 'arrow-down' }}">
+            {% if w.plus_value_pct >= 0 %}▲{% else %}▼{% endif %}
+            {{ '+' if w.plus_value >= 0 else '' }}{{ w.plus_value | money }}
+            ({{ '+' if w.plus_value_pct >= 0 else '' }}{{ "%.1f" | format(w.plus_value_pct) }}%)
+          </div>
+          <span class="watch-prix-achat">Achat : {{ w.prix_achat | money }}</span>
+        </div>
+      </a>
+    {% endfor %}
+  {% else %}
+    <div class="empty-card">
+      <div style="font-size:3rem;">⌚</div>
+      <h2>Aucune montre dans votre collection</h2>
+      <p>Ajoutez votre première pièce pour commencer à suivre sa valeur de marché.</p>
+      <a href="{{ url_for('ajouter') }}" class="btn btn-gold">Ajouter une montre</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

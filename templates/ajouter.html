@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block title %}Ajouter une montre — WatchFolio{% endblock %}
+
+{% block extra_head %}
+<style>
+  .page-header {
+    margin-bottom: 2rem;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  .page-sub {
+    color: var(--muted);
+    font-size: 0.875rem;
+    margin-top: 0.3rem;
+  }
+
+  .form-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 860px;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 1.5rem;
+  }
+
+  .form-full {
+    grid-column: 1 / -1;
+  }
+
+  .section-divider {
+    grid-column: 1 / -1;
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0.5rem 0 1rem;
+  }
+
+  .section-label {
+    grid-column: 1 / -1;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--gold);
+    margin-bottom: 0.25rem;
+  }
+
+  .checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    cursor: pointer;
+    margin-top: 0.25rem;
+  }
+
+  .checkbox-group input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--gold);
+    cursor: pointer;
+  }
+
+  .checkbox-label {
+    font-size: 0.875rem;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 640px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .form-full  { grid-column: 1; }
+    .section-divider { grid-column: 1; }
+    .section-label   { grid-column: 1; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Ajouter une montre</h1>
+  <p class="page-sub">Renseignez les informations de votre pièce pour commencer le suivi de sa valeur.</p>
+</div>
+
+<div class="form-card">
+  <form method="POST" action="{{ url_for('ajouter') }}" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-grid">
+      <!-- Identification -->
+      <div class="section-label">Identification</div>
+      <hr class="section-divider">
+
+      <div class="form-group">
+        <label class="form-label" for="marque">Marque *</label>
+        <input
+          class="form-control"
+          type="text"
+          id="marque"
+          name="marque"
+          placeholder="ex : Rolex"
+          list="marques-list"
+          autocomplete="off"
+          required
+        >
+        <datalist id="marques-list">
+          {% for m in marques %}
+            <option value="{{ m }}">
+          {% endfor %}
+        </datalist>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="reference">Référence *</label>
+        <input
+          class="form-control"
+          type="text"
+          id="reference"
+          name="reference"
+          placeholder="ex : 126610LN"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="annee">Année de fabrication</label>
+        <input
+          class="form-control"
+          type="number"
+          id="annee"
+          name="annee"
+          placeholder="ex : 2018"
+          min="1900"
+          max="2026"
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="etat">État</label>
+        <select class="form-control" id="etat" name="etat">
+          <option value="Excellent">Excellent — aucune trace d'usure</option>
+          <option value="Bon" selected>Bon — légères traces normales</option>
+          <option value="Moyen">Moyen — usure visible</option>
+        </select>
+      </div>
+
+      <!-- Prix -->
+      <div class="section-label mt-2">Prix & accessoires</div>
+      <hr class="section-divider">
+
+      <div class="form-group">
+        <label class="form-label" for="prix_achat">Prix d'achat (€) *</label>
+        <input
+          class="form-control"
+          type="number"
+          id="prix_achat"
+          name="prix_achat"
+          placeholder="ex : 9500"
+          min="0"
+          step="any"
+          required
+        >
+      </div>
+
+      <div class="form-group" style="display:flex; flex-direction:column; justify-content:flex-end; padding-bottom:1.25rem;">
+        <label class="form-label">Options</label>
+        <label class="checkbox-group">
+          <input type="checkbox" id="full_set" name="full_set">
+          <span class="checkbox-label">Boîte + papiers d'origine (Full Set)</span>
+        </label>
+      </div>
+
+      <!-- Notes -->
+      <div class="section-label mt-2">Notes</div>
+      <hr class="section-divider">
+
+      <div class="form-group form-full">
+        <label class="form-label" for="notes">Notes personnelles</label>
+        <textarea
+          class="form-control"
+          id="notes"
+          name="notes"
+          rows="3"
+          placeholder="Numéro de série, historique, vendeur, conditions d'achat..."
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-gold">Ajouter à ma collection</button>
+      <a href="{{ url_for('collection') }}" class="btn btn-outline">Annuler</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

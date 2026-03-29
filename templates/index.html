@@ -1,492 +1,187 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="manifest" href="/static/manifest.json">
-  <meta name="theme-color" content="#1F3864">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="PerfCNC">
-  <title>PerfCNC – Analysez la performance de votre atelier</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+{% extends "base.html" %}
+{% block title %}WatchFolio — Gérez votre collection de montres{% endblock %}
 
-    :root {
-      --navy:    #1F3864;
-      --navy-md: #2c4f8c;
-      --orange:  #ED7D31;
-      --orange-lt: #fdf0e8;
-      --gray-bg: #f4f6f9;
-      --gray-bd: #dde3ec;
-      --text:    #1a2333;
-      --muted:   #5a6a80;
-      --white:   #ffffff;
+{% block extra_head %}
+<style>
+  /* Hero */
+  .hero {
+    text-align: center;
+    padding: 5rem 1rem 4rem;
+  }
+
+  .hero-eyebrow {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    border: 1px solid var(--border);
+    padding: 0.3rem 0.9rem;
+    border-radius: 20px;
+    margin-bottom: 1.5rem;
+  }
+
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -1px;
+    margin-bottom: 1.25rem;
+    background: linear-gradient(135deg, #F5F5F5 60%, #C9A84C 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    font-size: 1.1rem;
+    color: var(--muted);
+    max-width: 560px;
+    margin: 0 auto 2.5rem;
+    line-height: 1.7;
+  }
+
+  .hero-cta {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* Features */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 5rem;
+  }
+
+  .feature-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem 1.5rem;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .feature-card:hover {
+    border-color: var(--gold);
+    transform: translateY(-3px);
+  }
+
+  .feature-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  .feature-card h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--gold);
+    margin-bottom: 0.6rem;
+  }
+
+  .feature-card p {
+    font-size: 0.875rem;
+    color: var(--muted);
+    line-height: 1.65;
+  }
+
+  /* Stats band */
+  .stats-band {
+    margin-top: 4rem;
+    display: flex;
+    justify-content: center;
+    gap: 4rem;
+    flex-wrap: wrap;
+    padding: 2.5rem 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stat-item {
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--gold);
+    display: block;
+  }
+
+  .stat-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  @media (max-width: 768px) {
+    .features {
+      grid-template-columns: 1fr;
     }
-
-    body {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      background: var(--gray-bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
+    .stats-band {
+      gap: 2rem;
     }
+  }
+</style>
+{% endblock %}
 
-    /* ── HEADER ── */
-    header {
-      background: var(--navy);
-      padding: 1rem 2rem;
-      display: flex;
-      align-items: center;
-      gap: .75rem;
-    }
-
-    .logo-mark {
-      width: 40px; height: 40px;
-      background: var(--orange);
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: 1.15rem; color: #fff;
-      flex-shrink: 0;
-    }
-
-    .logo-name { font-weight: 700; font-size: 1.2rem; color: #fff; letter-spacing: .02em; }
-
-    .header-link {
-      color: #c8d8f0;
-      font-size: .83rem;
-      font-weight: 500;
-      text-decoration: none;
-      border: 1px solid rgba(255,255,255,.2);
-      padding: .3rem .75rem;
-      border-radius: 6px;
-      transition: background .2s, color .2s;
-      margin-left: auto;
-    }
-    .header-link:hover { background: rgba(255,255,255,.1); color: #fff; }
-
-    /* ── HERO ── */
-    .hero {
-      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-md) 100%);
-      color: #fff;
-      text-align: center;
-      padding: 4rem 2rem 3rem;
-    }
-
-    .hero h1 {
-      font-size: clamp(1.6rem, 4vw, 2.4rem);
-      font-weight: 800;
-      line-height: 1.2;
-      margin-bottom: .75rem;
-    }
-
-    .hero h1 span { color: var(--orange); }
-
-    .hero p {
-      font-size: 1.05rem;
-      color: #b8c8e0;
-      max-width: 540px;
-      margin: 0 auto;
-      line-height: 1.6;
-    }
-
-    .hero-badges {
-      display: flex;
-      justify-content: center;
-      gap: .75rem;
-      margin-top: 1.5rem;
-      flex-wrap: wrap;
-    }
-
-    .badge {
-      background: rgba(255,255,255,.1);
-      border: 1px solid rgba(255,255,255,.2);
-      color: #d0dff0;
-      font-size: .78rem;
-      padding: .3rem .75rem;
-      border-radius: 20px;
-      font-weight: 500;
-    }
-
-    /* ── MAIN ── */
-    main {
-      flex: 1;
-      max-width: 640px;
-      width: 100%;
-      margin: 0 auto;
-      padding: 2.5rem 1.5rem;
-    }
-
-    /* ── ALERTS ── */
-    .alert {
-      padding: .85rem 1.1rem;
-      border-radius: 8px;
-      margin-bottom: 1.5rem;
-      font-size: .9rem;
-      display: flex;
-      align-items: flex-start;
-      gap: .6rem;
-    }
-    .alert-danger {
-      background: #fff0f0;
-      color: #c0392b;
-      border: 1px solid #f5c6c6;
-    }
-
-    /* ── UPLOAD CARD ── */
-    .card {
-      background: var(--white);
-      border-radius: 12px;
-      border: 1px solid var(--gray-bd);
-      box-shadow: 0 2px 16px rgba(31,56,100,.07);
-      padding: 2rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .card-title {
-      font-size: .75rem;
-      font-weight: 700;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      margin-bottom: 1.25rem;
-    }
-
-    /* ── DROP ZONE ── */
-    .drop-zone {
-      border: 2px dashed var(--gray-bd);
-      border-radius: 10px;
-      padding: 2.5rem 1.5rem;
-      text-align: center;
-      cursor: pointer;
-      transition: border-color .2s, background .2s;
-      position: relative;
-    }
-
-    .drop-zone:hover,
-    .drop-zone.dragover {
-      border-color: var(--orange);
-      background: var(--orange-lt);
-    }
-
-    .drop-zone input[type="file"] {
-      position: absolute;
-      inset: 0;
-      opacity: 0;
-      cursor: pointer;
-      width: 100%;
-      height: 100%;
-    }
-
-    .drop-icon { font-size: 2.8rem; margin-bottom: .75rem; line-height: 1; }
-
-    .drop-zone .primary-text {
-      font-size: .95rem;
-      color: var(--muted);
-      margin-bottom: .3rem;
-    }
-
-    .drop-zone .primary-text strong { color: var(--orange); cursor: pointer; }
-
-    .drop-zone .hint {
-      font-size: .78rem;
-      color: #9aafc4;
-    }
-
-    #file-name {
-      margin-top: .9rem;
-      font-size: .85rem;
-      color: var(--navy);
-      font-weight: 600;
-      min-height: 1.2rem;
-    }
-
-    /* ── SUBMIT ── */
-    .btn-submit {
-      display: block;
-      width: 100%;
-      padding: .95rem;
-      background: var(--orange);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 1.25rem;
-      transition: background .2s, transform .1s;
-      letter-spacing: .02em;
-    }
-    .btn-submit:hover:not(:disabled) {
-      background: #d96b1c;
-      transform: translateY(-1px);
-    }
-    .btn-submit:disabled {
-      background: #c5cdd8;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    /* ── COLONNES INFO ── */
-    .columns-card {
-      background: var(--white);
-      border-radius: 12px;
-      border: 1px solid var(--gray-bd);
-      box-shadow: 0 2px 16px rgba(31,56,100,.07);
-      padding: 1.5rem 2rem;
-    }
-
-    .columns-header {
-      display: flex;
-      align-items: center;
-      gap: .5rem;
-      margin-bottom: 1rem;
-    }
-
-    .columns-header .icon {
-      width: 28px; height: 28px;
-      background: var(--navy);
-      border-radius: 6px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: .85rem; color: #fff;
-    }
-
-    .columns-header p {
-      font-size: .85rem;
-      font-weight: 700;
-      color: var(--navy);
-    }
-
-    .columns-list {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: .5rem;
-    }
-
-    .col-item {
-      display: flex;
-      align-items: center;
-      gap: .5rem;
-      font-size: .85rem;
-      color: var(--text);
-      padding: .4rem .6rem;
-      background: #f4f6f9;
-      border-radius: 6px;
-    }
-
-    .col-item .dot {
-      width: 6px; height: 6px;
-      background: var(--orange);
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    /* ── CGU CONSENT ── */
-    .cgu-block {
-      margin-top: 1.1rem;
-      padding: .9rem 1rem;
-      background: #f8fafc;
-      border: 1px solid var(--gray-bd);
-      border-radius: 8px;
-      display: flex;
-      align-items: flex-start;
-      gap: .65rem;
-    }
-
-    .cgu-block input[type="checkbox"] {
-      width: 16px; height: 16px;
-      margin-top: 2px;
-      accent-color: var(--navy);
-      flex-shrink: 0;
-      cursor: pointer;
-    }
-
-    .cgu-block label {
-      font-size: .83rem;
-      color: var(--muted);
-      line-height: 1.5;
-      cursor: pointer;
-    }
-
-    .cgu-block label a {
-      color: var(--navy);
-      font-weight: 600;
-      text-decoration: none;
-    }
-    .cgu-block label a:hover { text-decoration: underline; }
-
-    /* ── FOOTER ── */
-    footer {
-      text-align: center;
-      padding: 1.5rem;
-      font-size: .78rem;
-      color: #9aafc4;
-      border-top: 1px solid var(--gray-bd);
-    }
-
-    /* ── DEMO BUTTON ── */
-    .btn-demo {
-      display: inline-block;
-      background: #ED7D31;
-      color: #fff;
-      padding: .65rem 1.8rem;
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: .97rem;
-      text-decoration: none;
-      transition: background .2s;
-    }
-    .btn-demo:hover { background: #c96520; }
-
-    @media (max-width: 600px) {
-      header { flex-wrap: wrap; gap: .4rem; padding: .75rem 1rem; }
-      .logo-mark { width: 32px; height: 32px; font-size: .95rem; }
-      .logo-name { font-size: 1rem; }
-      .header-link { font-size: .75rem; padding: .25rem .5rem; }
-      .hero { padding: 2.5rem 1rem 2rem; }
-      .hero h1 { font-size: 1.4rem; }
-      main { padding: 1rem; }
-      .card { padding: 1.25rem 1rem; }
-    }
-  </style>
-</head>
-<body>
-
-<header>
-  <div class="logo-mark">P</div>
-  <span class="logo-name">PerfCNC</span>
-  <a href="/comment-ca-marche" class="header-link" style="margin-left:0;">❓ Comment ça marche</a>
-  <a href="/glossaire" class="header-link" style="margin-left:0;">📖 Glossaire</a>
-  <a href="/cgu" class="header-link" style="margin-left:0;">⚖️ CGU</a>
-  <a href="/contact" class="header-link" style="margin-left:0;">✉️ Contact</a>
-  {% if current_user.is_authenticated %}
-    <a href="/historique" class="header-link" style="margin-left:auto;">📋 Historique</a>
-    <span style="color:#b8c8e0;font-size:.82rem;margin-left:.5rem;">{{ current_user.email }}</span>
-    <form method="POST" action="/logout" style="margin-left:.5rem;display:inline;">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button type="submit" style="background:transparent;border:1px solid rgba(255,255,255,.2);color:#c8d8f0;font-size:.82rem;padding:.3rem .75rem;border-radius:6px;cursor:pointer;font-family:inherit;">Déconnexion</button>
-    </form>
-  {% else %}
-    <a href="/login" class="header-link" style="margin-left:auto;">Connexion</a>
-    <a href="/register" class="header-link" style="margin-left:.5rem;">Créer un compte</a>
-  {% endif %}
-</header>
-
-<div class="hero">
-  <h1>Analysez la performance<br>de votre <span>atelier CNC</span></h1>
-  <p>Importez votre fichier Excel et obtenez des insights en 30 secondes — KPIs, graphiques et analyse IA inclus.</p>
-  <div class="hero-badges">
-    <span class="badge">📊 KPIs automatiques</span>
-    <span class="badge">📈 Graphiques interactifs</span>
-    <span class="badge">🤖 Analyse IA Ollama</span>
-    <span class="badge">🔒 Données traitées localement</span>
+{% block content %}
+<section class="hero">
+  <span class="hero-eyebrow">Collection · Valeur · IA</span>
+  <h1>Votre collection de montres,<br>valorisée en temps réel.</h1>
+  <p class="hero-sub">
+    WatchFolio suit la valeur de chaque pièce de votre collection, vous alerte sur les tendances du marché et vous conseille grâce à l'intelligence artificielle.
+  </p>
+  <div class="hero-cta">
+    <a href="{{ url_for('register') }}" class="btn btn-gold">Créer mon compte gratuit</a>
+    <a href="{{ url_for('marche') }}" class="btn btn-outline">Voir les tendances</a>
   </div>
-  <div style="margin-top:1.5rem;">
-    <a href="/demo" class="btn-demo">▶ Voir la démo</a>
+</section>
+
+<div class="stats-band">
+  <div class="stat-item">
+    <span class="stat-value">10</span>
+    <span class="stat-label">Montres en compte gratuit</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-value">IA</span>
+    <span class="stat-label">Conseil marché via Mistral</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-value">∞</span>
+    <span class="stat-label">Montres en compte Pro</span>
   </div>
 </div>
 
-<main>
-
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-      <div class="alert alert-{{ category }}">
-        <span>⚠️</span>
-        <span>{{ message }}</span>
-      </div>
-    {% endfor %}
-  {% endwith %}
-
-  <div class="card">
-    <div class="card-title">Importer un fichier Excel</div>
-    <form action="/upload" method="post" enctype="multipart/form-data" id="upload-form">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <div class="drop-zone" id="drop-zone">
-        <input type="file" name="file" id="file-input" accept=".xlsx,.xls" />
-        <div class="drop-icon">📂</div>
-        <p class="primary-text"><strong>Cliquez pour sélectionner</strong> ou glissez votre fichier ici</p>
-        <p class="hint">Formats acceptés : .xlsx · .xls · max 16 Mo</p>
-        <div id="file-name"></div>
-      </div>
-      {% if not cgu_accepted %}
-      <div class="cgu-block">
-        <input type="checkbox" name="cgu_consent" id="cgu_consent" required />
-        <label for="cgu_consent">
-          J'accepte les <a href="/cgu" target="_blank">Conditions Générales d'Utilisation</a> —
-          version gratuite : mes données anonymisées (KPIs agrégés uniquement,
-          jamais de données brutes) peuvent améliorer le service.
-        </label>
-      </div>
-      {% endif %}
-
-      <button type="submit" class="btn-submit" id="submit-btn" disabled>
-        Analyser le fichier →
-      </button>
-    </form>
-  </div>
-
-  <div class="columns-card">
-    <div class="columns-header">
-      <div class="icon">≡</div>
-      <p>Colonnes attendues dans le fichier</p>
-    </div>
-    <p style="font-size:.82rem;color:#5a6a80;margin:0 0 .75rem;line-height:1.5;">
-      Ces colonnes correspondent aux données collectées via votre formulaire de suivi.
-      Les noms doivent être identiques (majuscules et accents compris).
+<div class="features">
+  <div class="feature-card">
+    <span class="feature-icon">📈</span>
+    <h3>Suivi de valeur</h3>
+    <p>
+      Enregistrez le prix d'achat de chaque montre et mettez à jour sa valeur de marché au fil du temps.
+      Visualisez l'évolution de votre portefeuille en un coup d'œil.
     </p>
-    <div class="columns-list">
-      <div class="col-item"><span class="dot"></span>Date</div>
-      <div class="col-item"><span class="dot"></span>Équipe</div>
-      <div class="col-item"><span class="dot"></span>Code CRMX</div>
-      <div class="col-item"><span class="dot"></span>Référence pièce</div>
-      <div class="col-item"><span class="dot"></span>Famille</div>
-      <div class="col-item"><span class="dot"></span>Cause arrêt</div>
-      <div class="col-item"><span class="dot"></span>Heures produites</div>
-      <div class="col-item"><span class="dot"></span>Pièces KO</div>
-    </div>
   </div>
-
-</main>
-
-<footer>PerfCNC &copy; 2026 — Tableau de bord performance atelier CNC</footer>
-
-<script>
-  const input  = document.getElementById('file-input');
-  const btn    = document.getElementById('submit-btn');
-  const label  = document.getElementById('file-name');
-  const zone   = document.getElementById('drop-zone');
-
-  input.addEventListener('change', () => {
-    if (input.files.length > 0) {
-      label.textContent = '✔ ' + input.files[0].name;
-      btn.disabled = false;
-    } else {
-      label.textContent = '';
-      btn.disabled = true;
-    }
-  });
-
-  ['dragenter', 'dragover'].forEach(e =>
-    zone.addEventListener(e, ev => { ev.preventDefault(); zone.classList.add('dragover'); })
-  );
-  ['dragleave', 'drop'].forEach(e =>
-    zone.addEventListener(e, ev => { ev.preventDefault(); zone.classList.remove('dragover'); })
-  );
-
-  document.getElementById('upload-form').addEventListener('submit', () => {
-    btn.disabled = true;
-    btn.textContent = '⏳ Analyse en cours…';
-  });
-</script>
-
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/static/sw.js').catch(() => {});
-    });
-  }
-</script>
-
-</body>
-</html>
+  <div class="feature-card">
+    <span class="feature-icon">🤖</span>
+    <h3>Conseil IA</h3>
+    <p>
+      Pour chaque montre, notre IA locale (Mistral via Ollama) analyse les tendances du marché et vous indique
+      si c'est le bon moment pour vendre, conserver ou acheter.
+    </p>
+  </div>
+  <div class="feature-card">
+    <span class="feature-icon">💼</span>
+    <h3>Portefeuille</h3>
+    <p>
+      Tableau de bord synthétique : valeur totale, meilleures performances, distribution par marque.
+      Votre collection, analysée comme un vrai investissement.
+    </p>
+  </div>
+</div>
+{% endblock %}

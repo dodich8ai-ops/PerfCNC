@@ -1,13 +1,6 @@
 __pycache__/
-*.py[cod]
-*.pyo
-.env
-venv/
-.venv/
-uploads/
-*.xlsx
-*.xls
+*.pyc
 instance/
-.DS_Store
-# Données collectées anonymisées (jamais versionnées)
-data/collected/
+uploads/
+.env
+*.db

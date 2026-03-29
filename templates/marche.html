@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block title %}Tendances du marché — WatchFolio{% endblock %}
+
+{% block extra_head %}
+<style>
+  .page-header {
+    margin-bottom: 2rem;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+  }
+
+  .page-sub {
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+
+  /* Info banner */
+  .info-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    background: var(--gold-lt);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 1.75rem;
+    font-size: 0.85rem;
+    color: var(--gold);
+    line-height: 1.5;
+  }
+
+  .info-icon { font-size: 1rem; flex-shrink: 0; margin-top: 0.1rem; }
+
+  /* Tendency badges in table */
+  .tend-hausse {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: rgba(76,175,125,0.15);
+    color: var(--green);
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  .tend-stable {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: var(--gold-lt);
+    color: var(--gold);
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  .tend-baisse {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: rgba(224,92,92,0.15);
+    color: var(--red);
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  .variation-pos { color: var(--green); font-weight: 600; }
+  .variation-neg { color: var(--red);   font-weight: 600; }
+  .variation-neu { color: var(--muted); font-weight: 500; }
+
+  .table-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .table-card table { margin: 0; }
+  .table-card th:first-child,
+  .table-card td:first-child { padding-left: 1.5rem; }
+  .table-card th:last-child,
+  .table-card td:last-child  { padding-right: 1.5rem; }
+
+  /* CTA for logged-out users */
+  .cta-section {
+    margin-top: 2.5rem;
+    text-align: center;
+    padding: 2.5rem;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+
+  .cta-section h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .cta-section p {
+    color: var(--muted);
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Tendances du marché</h1>
+  <p class="page-sub">Montres de luxe — évolutions récentes des prix sur le marché secondaire</p>
+</div>
+
+<div class="info-banner">
+  <span class="info-icon">ℹ️</span>
+  <span>
+    <strong>Données indicatives.</strong> Ces tendances sont fournies à titre informatif uniquement.
+    Consultez <a href="https://www.chrono24.fr" target="_blank" rel="noopener" style="color:var(--gold);">Chrono24</a>,
+    <a href="https://www.watchrecon.com" target="_blank" rel="noopener" style="color:var(--gold);">WatchRecon</a>
+    ou un expert pour les prix en temps réel.
+  </span>
+</div>
+
+<div class="table-card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Marque</th>
+          <th>Modèle</th>
+          <th>Référence</th>
+          <th>Tendance</th>
+          <th>Variation</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in tendances %}
+          <tr>
+            <td class="fw-600">{{ t.marque }}</td>
+            <td>{{ t.modele }}</td>
+            <td><span class="text-muted" style="font-size:0.8rem; font-family:monospace;">{{ t.ref }}</span></td>
+            <td>
+              {% if t.tendance == 'hausse' %}
+                <span class="tend-hausse">▲ Hausse</span>
+              {% elif t.tendance == 'baisse' %}
+                <span class="tend-baisse">▼ Baisse</span>
+              {% else %}
+                <span class="tend-stable">= Stable</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if t.variation.startswith('+') %}
+                <span class="variation-pos">{{ t.variation }}</span>
+              {% elif t.variation.startswith('-') %}
+                <span class="variation-neg">{{ t.variation }}</span>
+              {% else %}
+                <span class="variation-neu">{{ t.variation }}</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if not current_user.is_authenticated %}
+  <div class="cta-section">
+    <h2>Suivez la valeur de votre propre collection</h2>
+    <p>Créez un compte gratuit pour enregistrer vos montres et recevoir des conseils IA personnalisés.</p>
+    <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+      <a href="{{ url_for('register') }}" class="btn btn-gold">Créer mon compte gratuit</a>
+      <a href="{{ url_for('login') }}" class="btn btn-outline">Se connecter</a>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

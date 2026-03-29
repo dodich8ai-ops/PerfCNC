@@ -1,142 +1,115 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="manifest" href="/static/manifest.json">
-  <meta name="theme-color" content="#1F3864">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="PerfCNC">
-  <title>PerfCNC – Connexion</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --navy: #1F3864; --navy-md: #2c4f8c; --navy-lt: #e8eef8;
-      --orange: #ED7D31; --orange-dk: #c96520; --orange-lt: #fdf0e8;
-      --gray-bg: #f4f6f9; --gray-bd: #dde3ec;
-      --text: #1a2333; --muted: #5a6a80; --white: #ffffff;
-      --red: #c0392b; --red-lt: #fdf0f0;
-    }
-    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--gray-bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+{% extends "base.html" %}
+{% block title %}Connexion — WatchFolio{% endblock %}
 
-    nav { background: var(--navy); height: 58px; display: flex; align-items: center; justify-content: space-between; padding: 0 1.75rem; box-shadow: 0 2px 12px rgba(0,0,0,.25); }
-    .nav-left { display: flex; align-items: center; gap: .65rem; text-decoration: none; }
-    .nav-mark { width: 34px; height: 34px; background: var(--orange); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.05rem; color: #fff; }
-    .nav-name { color: #fff; font-weight: 700; font-size: 1.05rem; }
+{% block extra_head %}
+<style>
+  .auth-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 2rem;
+  }
 
-    .page { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; }
+  .auth-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    width: 100%;
+    max-width: 420px;
+  }
 
-    .card { background: var(--white); border-radius: 14px; border: 1px solid var(--gray-bd); box-shadow: 0 4px 24px rgba(31,56,100,.1); padding: 2.25rem 2rem; width: 100%; max-width: 420px; }
+  .auth-icon {
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
 
-    .card-header { text-align: center; margin-bottom: 1.75rem; }
-    .card-header .icon { font-size: 2.2rem; margin-bottom: .5rem; }
-    .card-header h1 { font-size: 1.35rem; font-weight: 800; color: var(--navy); }
-    .card-header p { font-size: .85rem; color: var(--muted); margin-top: .3rem; }
+  .auth-w {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    background: var(--gold-lt);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--gold);
+  }
 
-    .form-group { margin-bottom: 1.1rem; }
-    label { display: block; font-size: .82rem; font-weight: 600; color: var(--navy); margin-bottom: .4rem; }
-    input[type="email"], input[type="password"] {
-      width: 100%; padding: .65rem .85rem; border: 1.5px solid var(--gray-bd);
-      border-radius: 7px; font-size: .93rem; color: var(--text);
-      font-family: inherit; outline: none; transition: border-color .2s;
-      background: var(--white);
-    }
-    input:focus { border-color: var(--navy); }
-    input.error { border-color: var(--red); }
+  .auth-title {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+  }
 
-    .error-msg { font-size: .79rem; color: var(--red); margin-top: .3rem; }
+  .auth-sub {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.875rem;
+    margin-bottom: 2rem;
+  }
 
-    .btn-submit {
-      width: 100%; padding: .75rem; background: var(--navy); color: #fff;
-      border: none; border-radius: 8px; font-size: .97rem; font-weight: 700;
-      cursor: pointer; margin-top: .5rem; transition: background .2s;
-      font-family: inherit;
-    }
-    .btn-submit:hover { background: var(--navy-md); }
+  .auth-footer {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.875rem;
+    color: var(--muted);
+  }
+</style>
+{% endblock %}
 
-    .divider { text-align: center; font-size: .8rem; color: var(--muted); margin: 1.25rem 0; position: relative; }
-    .divider::before, .divider::after { content: ''; position: absolute; top: 50%; width: 38%; height: 1px; background: var(--gray-bd); }
-    .divider::before { left: 0; } .divider::after { right: 0; }
-
-    .link-btn {
-      display: block; text-align: center; padding: .65rem;
-      border: 1.5px solid var(--gray-bd); border-radius: 8px;
-      color: var(--navy); font-size: .9rem; font-weight: 600;
-      text-decoration: none; transition: background .15s, border-color .15s;
-    }
-    .link-btn:hover { background: var(--navy-lt); border-color: var(--navy); }
-
-    .flash { padding: .75rem 1rem; border-radius: 7px; font-size: .87rem; margin-bottom: 1rem; }
-    .flash.danger { background: var(--red-lt); border: 1px solid #f5c6c6; color: #7b1a1a; }
-    .flash.success { background: #e8f5ee; border: 1px solid #b3dfc7; color: #1a4a30; }
-
-    .demo-note { font-size: .78rem; color: var(--muted); text-align: center; margin-top: 1.1rem; line-height: 1.5; }
-    .demo-note a { color: var(--navy); font-weight: 600; }
-
-    footer { text-align: center; color: #9aafc4; font-size: .75rem; padding: 1rem 0; }
-  </style>
-</head>
-<body>
-<nav>
-  <a href="/" class="nav-left">
-    <div class="nav-mark">P</div>
-    <span class="nav-name">PerfCNC</span>
-  </a>
-  <div style="display:flex;align-items:center;gap:.5rem;">
-    <a href="/contact" style="color:#c8d8f0;font-size:.82rem;font-weight:500;text-decoration:none;border:1px solid rgba(255,255,255,.18);padding:.35rem .8rem;border-radius:6px;">✉️ Contact</a>
-    <a href="/register" style="color:#c8d8f0;font-size:.82rem;font-weight:500;text-decoration:none;border:1px solid rgba(255,255,255,.18);padding:.35rem .8rem;border-radius:6px;">Créer un compte</a>
-  </div>
-</nav>
-
-<div class="page">
-  <div class="card">
-    <div class="card-header">
-      <div class="icon">🔐</div>
-      <h1>Connexion</h1>
-      <p>Accédez à votre historique d'analyses</p>
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-icon">
+      <span class="auth-w">W</span>
     </div>
+    <h1 class="auth-title">Connexion</h1>
+    <p class="auth-sub">Accédez à votre collection</p>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% for category, message in messages %}
-      <div class="flash {{ category }}">{{ message }}</div>
-      {% endfor %}
-    {% endwith %}
-
-    <form method="POST" action="/login" novalidate>
+    <form method="POST" action="{{ url_for('login') }}" novalidate>
+      {{ csrf_token() if csrf_token is defined else '' }}
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
       <div class="form-group">
-        <label for="email">Adresse e-mail</label>
-        <input type="email" id="email" name="email" placeholder="vous@exemple.fr"
-               value="{{ email or '' }}" autocomplete="email" required>
+        <label class="form-label" for="email">Adresse e-mail</label>
+        <input
+          class="form-control"
+          type="email"
+          id="email"
+          name="email"
+          value="{{ email or '' }}"
+          placeholder="vous@exemple.fr"
+          autocomplete="email"
+          required
+        >
       </div>
 
       <div class="form-group">
-        <label for="password">Mot de passe</label>
-        <input type="password" id="password" name="password"
-               placeholder="••••••••" autocomplete="current-password" required>
+        <label class="form-label" for="password">Mot de passe</label>
+        <input
+          class="form-control"
+          type="password"
+          id="password"
+          name="password"
+          placeholder="••••••••"
+          autocomplete="current-password"
+          required
+        >
       </div>
 
-      <button type="submit" class="btn-submit">Se connecter →</button>
+      <button type="submit" class="btn btn-gold" style="width:100%; justify-content:center; padding:0.75rem;">
+        Se connecter
+      </button>
     </form>
 
-    <div class="divider">ou</div>
-    <a href="/register" class="link-btn">Créer un compte gratuit</a>
-
-    <p class="demo-note">
-      Pas de compte ? <a href="/">Essayez sans inscription</a> — 1 analyse gratuite sans sauvegarde.
-    </p>
+    <div class="auth-footer">
+      Pas encore de compte ?
+      <a href="{{ url_for('register') }}">Créer un compte gratuit</a>
+    </div>
   </div>
 </div>
-
-<footer>PerfCNC &copy; 2026</footer>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/static/sw.js').catch(() => {});
-    });
-  }
-</script>
-</body>
-</html>
+{% endblock %}

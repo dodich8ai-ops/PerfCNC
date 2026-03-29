@@ -1,0 +1,18 @@
+{
+  "total_saisies": 50,
+  "moyenne_heures": 5.76,
+  "total_rebuts": 349,
+  "causes": {
+    "Panne machine": 12,
+    "Manque matière": 11,
+    "Réglage": 10,
+    "Maintenance": 9,
+    "Pause": 8
+  },
+  "familles": {
+    "Fraisage": 14,
+    "Tournage": 17,
+    "Usinage": 19
+  },
+  "trs": 65.6
+}
