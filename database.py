@@ -83,3 +83,20 @@ class PriceHistory(db.Model):
     @property
     def date_fr(self):
         return self.date.strftime("%d/%m/%Y") if self.date else "—"
+
+
+class MarketPriceCache(db.Model):
+    """Cache 24h des prix Chrono24 par (marque, référence)."""
+    __tablename__ = "market_price_cache"
+    id          = db.Column(db.Integer, primary_key=True)
+    marque      = db.Column(db.String(100), nullable=False)
+    reference   = db.Column(db.String(100), nullable=False)
+    prix_min    = db.Column(db.Float)
+    prix_median = db.Column(db.Float)
+    prix_max    = db.Column(db.Float)
+    nb_annonces = db.Column(db.Integer, default=0)
+    date_cache  = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint("marque", "reference", name="uq_market_marque_ref"),
+    )

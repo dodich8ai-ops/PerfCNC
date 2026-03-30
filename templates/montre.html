@@ -338,6 +338,61 @@
   </div>
 </div>
 
+<!-- Prix du marché Chrono24 -->
+{% if prix_marche %}
+<div class="card mb-3" style="border-color: rgba(201,168,76,0.35);">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.1rem; flex-wrap:wrap; gap:.5rem;">
+    <div style="display:flex; align-items:center; gap:.6rem;">
+      <span style="font-size:1.2rem;">📊</span>
+      <div>
+        <div style="font-size:.95rem; font-weight:700; color:var(--gold);">Prix du marché — Chrono24</div>
+        <div style="font-size:.75rem; color:var(--muted);">
+          {{ prix_marche.nb_annonces }} annonce{% if prix_marche.nb_annonces > 1 %}s{% endif %} analysée{% if prix_marche.nb_annonces > 1 %}s{% endif %}
+          · Mis à jour le {{ prix_marche.date }}
+          {% if prix_marche.from_cache %}<span style="font-size:.7rem; opacity:.6;">(cache)</span>{% endif %}
+        </div>
+      </div>
+    </div>
+    <a href="https://www.chrono24.fr/search/index.htm?query={{ watch.marque|urlencode }}+{{ watch.reference|urlencode }}"
+       target="_blank" rel="noopener"
+       style="font-size:.78rem; color:var(--muted); border:1px solid var(--border); padding:.25rem .65rem; border-radius:6px; white-space:nowrap;">
+      Voir sur Chrono24 →
+    </a>
+  </div>
+
+  <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; text-align:center;">
+    <div style="background:var(--bg3); border-radius:10px; padding:.9rem;">
+      <div style="font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:.3rem;">Prix min</div>
+      <div style="font-size:1.2rem; font-weight:700; color:var(--green);">{{ prix_marche.prix_min | money }}</div>
+    </div>
+    <div style="background:var(--bg3); border:1px solid rgba(201,168,76,0.3); border-radius:10px; padding:.9rem;">
+      <div style="font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:.3rem;">Prix médian</div>
+      <div style="font-size:1.35rem; font-weight:800; color:var(--gold);">{{ prix_marche.prix_median | money }}</div>
+    </div>
+    <div style="background:var(--bg3); border-radius:10px; padding:.9rem;">
+      <div style="font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:.3rem;">Prix max</div>
+      <div style="font-size:1.2rem; font-weight:700; color:var(--red);">{{ prix_marche.prix_max | money }}</div>
+    </div>
+  </div>
+
+  {# Indicateur : prix d'achat vs médian #}
+  {% set pm = prix_marche.prix_median %}
+  {% if pm and watch.prix_achat %}
+    {% set ecart_pct = ((pm - watch.prix_achat) / watch.prix_achat * 100) | round(1) %}
+    <div style="margin-top:.9rem; padding:.6rem .9rem; background:var(--bg3); border-radius:8px; font-size:.82rem; color:var(--muted);">
+      Votre prix d'achat est
+      {% if ecart_pct > 0 %}
+        <strong style="color:var(--green);">{{ ecart_pct }}% en dessous</strong> du médian marché — bonne affaire.
+      {% elif ecart_pct < 0 %}
+        <strong style="color:var(--red);">{{ (ecart_pct * -1) }}% au-dessus</strong> du médian marché.
+      {% else %}
+        <strong style="color:var(--gold);">aligné</strong> avec le médian marché.
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endif %}
+
 <!-- AI Conseil -->
 <div class="ai-card">
   <div class="ai-header">
